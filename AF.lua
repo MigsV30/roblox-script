@@ -22,7 +22,7 @@ local AUTOFARMS = {
 		},
 		WaitTime = 20, -- Seconds
 		TP_TIME = 1.5, -- Seconds
-		RejoinTime = 25 -- Minutes
+		RejoinTime = 15 -- Minutes
 	}
 }
 
