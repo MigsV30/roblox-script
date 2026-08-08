@@ -129,10 +129,19 @@ local function GetRoot()
 end
 
 local function PressE()
-	print("Pressionando E")
 	game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.E, false, game)
 	task.wait(0.1)
 	game:GetService("VirtualInputManager"):SendKeyEvent(false, Enum.KeyCode.E, false, game)
+end
+
+local function IsAtPosition(root, targetCFrame, tolerance)
+	if not root or not targetCFrame then
+		return false
+	end
+
+	tolerance = tolerance or 5
+
+	return (root.Position - targetCFrame.Position).Magnitude <= tolerance
 end
 
 local function StartAutoFarm(modeName)
@@ -156,19 +165,37 @@ local function StartAutoFarm(modeName)
 			end
 
 			--==================================================
-			-- 1. TELEPORTA PARA O START
+			-- 1. START POS
 			--==================================================
 
 			print("Teleportando para StartPos...")
 			root.CFrame = data.StartPos
 
-			-- Espera o Start_CD
-			print("Esperando Start_CD:", data.Start_CD, "segundos")
+			if not TogglesState[modeName] then
+				break
+			end
 
-			local startWait = os.clock()
+			--==================================================
+			-- 2. PRESS E
+			--==================================================
 
-			while os.clock() - startWait < data.Start_CD do
-				if not TogglesState[modeName] then
+			print("Pressionando E...")
+			PressE()
+
+			if not TogglesState[modeName] then
+				break
+			end
+
+			--==================================================
+			-- 3. START CD
+			--==================================================
+
+			print("Start_CD:", data.Start_CD, "segundos")
+
+			local startCD = os.clock()
+
+			while TogglesState[modeName] do
+				if os.clock() - startCD >= data.Start_CD then
 					break
 				end
 
@@ -180,52 +207,99 @@ local function StartAutoFarm(modeName)
 			end
 
 			--==================================================
-			-- 2. INICIA O FARM
+			-- 4. FARM
 			--==================================================
 
-			print("Iniciando AutoFarm")
+			print("Iniciando farm...")
 
 			local farmStart = os.clock()
-			local exitTime = data.ExitTime * 60
-
+			local exitDuration = data.ExitTime * 60
 			local positionIndex = 1
+			local stoppedEarly = false
 
-			while TogglesState[modeName] and (os.clock() - farmStart) < exitTime do
+			while TogglesState[modeName] do
+				local elapsed = os.clock() - farmStart
+
+				-- ExitTime terminou normalmente
+				if elapsed >= exitDuration then
+					break
+				end
+
+				root = GetRoot()
+
+				if not root then
+					warn("Root perdido durante o farm")
+					task.wait(1)
+					continue
+				end
+
+				--==================================================
+				-- VERIFICAÇÃO DE START POS
+				--==================================================
+
+				if IsAtPosition(root, data.StartPos, 5) then
+					print("Player voltou para StartPos antes do ExitTime.")
+
+					stoppedEarly = true
+					break
+				end
+
+				--==================================================
+				-- TELEPORTA PARA A POS
+				--==================================================
+
 				local cf = data.Pos[positionIndex]
 
 				if cf then
 					root.CFrame = cf
 
 					print(
-						"TP:",
-						positionIndex,
-						"| Tempo restante:",
-						math.max(0, math.floor(exitTime - (os.clock() - farmStart))),
-						"segundos"
+						"TP Pos[" .. positionIndex .. "]"
 					)
 				end
 
 				positionIndex += 1
 
-				-- Volta para a primeira posição
 				if positionIndex > #data.Pos then
 					positionIndex = 1
 				end
 
-				-- Espera o TP_TIME sem ultrapassar o ExitTime
-				local tpWait = os.clock()
+				--==================================================
+				-- TP TIME
+				--==================================================
 
-				while os.clock() - tpWait < data.TP_TIME do
-					if not TogglesState[modeName] then
+				local tpStart = os.clock()
+
+				while TogglesState[modeName] do
+					local tpElapsed = os.clock() - tpStart
+
+					if tpElapsed >= data.TP_TIME then
 						break
 					end
 
-					-- Se o ExitTime acabou, não precisa continuar esperando
-					if os.clock() - farmStart >= exitTime then
+					if os.clock() - farmStart >= exitDuration then
+						break
+					end
+
+					root = GetRoot()
+
+					if not root then
+						break
+					end
+
+					-- Verifica novamente durante o TP_TIME
+					if IsAtPosition(root, data.StartPos, 5) then
+						print("Player voltou para StartPos durante o farm.")
+
+						stoppedEarly = true
 						break
 					end
 
 					task.wait()
+				end
+
+				if stoppedEarly then
+					break
 				end
 			end
 
@@ -234,25 +308,40 @@ local function StartAutoFarm(modeName)
 			end
 
 			--==================================================
-			-- 3. FINALIZOU O EXIT TIME
+			-- 5. FARM TERMINOU
 			--==================================================
 
-			print("ExitTime finalizado.")
+			if stoppedEarly then
+				print("Farm interrompido porque o player voltou para StartPos.")
+			else
+				print("ExitTime finalizado.")
+			end
 
-			-- Volta para StartPos
-			print("Voltando para StartPos...")
-			root.CFrame = data.StartPos
+			-- Garante que está no StartPos
+			root = GetRoot()
+
+			if root then
+				root.CFrame = data.StartPos
+			end
+
+			if not TogglesState[modeName] then
+				break
+			end
 
 			--==================================================
-			-- 4. ESPERA WAIT_REJOIN
+			-- 6. WAIT REJOIN
 			--==================================================
 
-			print("Esperando Wait_Rejoin:", data.Wait_Rejoin, "segundos")
+			print(
+				"Esperando Wait_Rejoin:",
+				data.Wait_Rejoin,
+				"segundos"
+			)
 
-			local rejoinWait = os.clock()
+			local rejoinStart = os.clock()
 
-			while os.clock() - rejoinWait < data.Wait_Rejoin do
-				if not TogglesState[modeName] then
+			while TogglesState[modeName] do
+				if os.clock() - rejoinStart >= data.Wait_Rejoin then
 					break
 				end
 
@@ -263,8 +352,10 @@ local function StartAutoFarm(modeName)
 				break
 			end
 
-			-- Depois do Wait_Rejoin,
-			-- volta automaticamente para o ciclo de farm.
+			--==================================================
+			-- 7. NOVO CICLO
+			--==================================================
+
 			print("Reiniciando ciclo...")
 		end
 
@@ -389,3 +480,5 @@ end
 ------ CREATE YOUR SETTINGS ------
 
 CreateToggle("Auto Patrick Gamemode")
+
+-- 	loadstring(game:HttpGet("https://raw.githubusercontent.com/MigsV30/roblox-script/main/AF.lua"))()
