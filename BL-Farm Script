@@ -311,7 +311,9 @@ local function AutoObby()
 					local VictoryPart = ObbyParts[Difficulty .. "Obby"]
 
 					print("[BL: Farm] Teleport realizado | Dificuldade:", Difficulty)
-
+					
+					task.wait(1)
+					
 					for i = 1, 5 do
 						print("[BL: Farm] ClaimObbyBonus | Chamada:", i, "/5")
 
@@ -348,6 +350,8 @@ local function AutoItems()
 	if Teleport(Config[1]) then
 		print("[BL: Farm] Teleport realizado | Item:", itemIndex)
 
+		task.wait(1)
+
 		for i = 1, 5 do
 			print("[BL: Farm] CollectCollectableObject | Chamada:", i, "/5")
 
@@ -380,6 +384,8 @@ local function AutoVariants()
 
 	if Teleport(Config[1]) then
 		print("[BL: Farm] Teleport realizado | Variante:", variantIndex)
+
+		task.wait(1)
 
 		for i = 1, 5 do
 			print("[BL: Farm] CollectVariantTokenSpawn | Chamada:", i, "/5")
