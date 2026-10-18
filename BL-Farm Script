@@ -1,0 +1,623 @@
+-- // Services \\ --
+local Players = game:GetService("Players")
+local Lighting = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
+local Player = Players.LocalPlayer
+local PlayerGui = Player.PlayerGui
+
+-- // Remotes \\ -- 
+
+local Remotes = ReplicatedStorage.Remotes
+
+local ClaimObbyBonus = Remotes:WaitForChild("ClaimObbyBonus")
+local ItemCollect = Remotes:WaitForChild("CollectCollectableObject")
+local VariantCollect = Remotes:WaitForChild("CollectVariantTokenSpawn")
+
+-- // Parts \\ --
+ 
+local ObbyParts = {
+	EasyObby = workspace.Systems.Obby.VictoryParts.EasyObby;
+	MediumObby = workspace.Systems.Obby.VictoryParts.MediumObby;
+	HardObby = workspace.Systems.Obby.VictoryParts.HardObby;
+}
+
+local ItemParts = {
+	Part1 = workspace.Systems.CollectableObjects.Part1;
+	Part2 = workspace.Systems.CollectableObjects.Part2;
+	Part3 = workspace.Systems.CollectableObjects.Part3;
+	Part4 = workspace.Systems.CollectableObjects.Part4;
+	Part5 = workspace.Systems.CollectableObjects.Part5;
+	Part6 = workspace.Systems.CollectableObjects.Part6;
+	Part7 = workspace.Systems.CollectableObjects.Part7;
+}
+local VariantParts = {
+	Part1 = workspace.Systems.VariantTokenSpawns.Part1;
+	Part2 = workspace.Systems.VariantTokenSpawns.Part2;
+	Part3 = workspace.Systems.VariantTokenSpawns.Part3;
+	Part4 = workspace.Systems.VariantTokenSpawns.Part4;
+	Part5 = workspace.Systems.VariantTokenSpawns.Part5;
+	Part6 = workspace.Systems.VariantTokenSpawns.Part6;
+	Part7 = workspace.Systems.VariantTokenSpawns.Part7;
+	Part8 = workspace.Systems.VariantTokenSpawns.Part8;
+	Part9 = workspace.Systems.VariantTokenSpawns.Part9;
+	Part10 = workspace.Systems.VariantTokenSpawns.Part10;
+	Part11 = workspace.Systems.VariantTokenSpawns.Part11;
+	Part12 = workspace.Systems.VariantTokenSpawns.Part12;
+	Part13 = workspace.Systems.VariantTokenSpawns.Part13;
+}
+
+-- // Configs \\ --
+local AutoFarms = {
+	["Variants"] = {
+		Name = "Auto Variants";
+		Desc = "Auto Collect Variants";
+		Active = false;
+		Priority = 1;
+		
+		TP_CD = 1.8;
+	};
+	["Obby"] = {
+		Name = "Auto Obby";
+		Desc = "Skip Obby Parkour and Claim Reward";
+		Active = false;
+		Priority = 2;
+		Difficulty = {};
+		DifficultyCD = {};
+		
+		TP_CD = 2;
+	};
+	["Halloween"] = {
+		Name = "🎃 Auto Halloween 🎃";
+		Desc = "Auto Open Doors without Collecting Candies";
+		Active = false;
+		Priority = 3;
+		
+		TP_CD = 5;
+	};
+	["Items"] = {
+		Name = "Auto Items";
+		Desc = "Auto Collect Items";
+		Active = false;
+		Priority = 4;
+		
+		TP_CD = 1.8
+	};
+}
+
+local Positions = {
+	["Variants"] = {
+		[1] = {
+			CFrame.new(-1843, 8, -248)
+		};
+		[2] = {
+			CFrame.new(-1821, 8, 208)	
+		};
+		[3] = {
+			CFrame.new(-1833, 8, 269.5)	
+		};
+		[4] = {
+			CFrame.new(-1729, 8, 276)	
+		};
+		[5] = {
+			CFrame.new(-1824.5, 8, -123.5)	
+		};
+		[6] = {
+			CFrame.new(-1936, 8, 17)	
+		};
+		[7] = {
+			CFrame.new(-1671.5, 8, 17)	
+		};
+		[8] = {
+			CFrame.new(-1777, 8, -176)	
+		};
+		[9] = {
+			CFrame.new(-1984, 8, -240)	
+		};
+		[10] = {
+			CFrame.new(-1623, 6.5, -250)	
+		};
+		[11] = {
+			CFrame.new(-1604, 6.5, 20)	
+		};
+		[12] = {
+			CFrame.new(-1610, 6.5, 271.5)	
+		};
+		[13] = {
+			CFrame.new(-1980, 6.5, 273.5)	
+		};
+	};
+	["Obby"] = {
+		["Easy"] = {
+			CFrame.new(-1799, 390, 141);
+			CD = 300;
+		};
+		["Medium"] = {
+			CFrame.new(-1913, 368, 12);
+			CD = 600;
+		};
+		["Hard"] = {
+			CFrame.new(-1795, 406, -132);
+			CD = 900;
+		};
+	};
+	["Halloween"] = {
+		[1] = {
+			CFrame.new(-2043, 6.65, -162)
+		};
+		[2] = {
+			CFrame.new(-2042, 6.65, -111)
+		};
+		[3] = {
+			CFrame.new(-2042, 6.65, -61)
+		};
+		[4] = {
+			CFrame.new(-2046, 6.65, 86)
+		};
+		[5] = {
+			CFrame.new(-2044, 6.65, 136)
+		};
+		[6] = {
+			CFrame.new(-2043, 6.65, 188)
+		};
+		[7] = {
+			CFrame.new(-1931, 6.65, 341)
+		};
+		[8] = {
+			CFrame.new(-1879, 6.65, 342)
+		};
+		[9] = {
+			CFrame.new(-1827, 6.65, 343)
+		};
+		[10] = {
+			CFrame.new(-1677, 6.65, 345)
+		};
+		[11] = {
+			CFrame.new(-1625, 6.65, 341)
+		};
+		[12] = {
+			CFrame.new(-1573, 6.65, 341)
+		};
+		[13] = {
+			CFrame.new(-1546, 6.65, 187)
+		};
+		[14] = {
+			CFrame.new(-1547, 6.65, 137)
+		};
+		[15] = {
+			CFrame.new(-1547, 6.65, 86)
+		};
+		[16] = {
+			CFrame.new(-1542, 6.65, -61)
+		};
+		[17] = {
+			CFrame.new(-1546, 6.65, -111)
+		};
+		[18] = {
+			CFrame.new(-1548, 6.65, -163)
+		};
+		[19] = {
+			CFrame.new(-1658, 6.65, -316)
+		};
+		[20] = {
+			CFrame.new(-1710, 6.65, -316)
+		};
+		[21] = {
+			CFrame.new(-1762, 6.65, -316)
+		};
+		[22] = {
+			CFrame.new(-1912, 6.65, -320)
+		};
+		[23] = {
+			CFrame.new(-1964, 6.65, -317)
+		};
+		[24] = {
+			CFrame.new(-2016, 6.65, -316)
+		};
+	};
+	["Items"] = {
+		[1] = {
+			CFrame.new(-1724, 8, 6.5)
+		};
+		[2] = {
+			CFrame.new(-1858, 8, 265)
+		};
+		[3] = {
+			CFrame.new(-1860, 8, -257)
+		};
+		[4] = {
+			CFrame.new(-1769, 8, -198)
+		};
+		[5] = {
+			CFrame.new(-1866.5, 8, 14.5)
+		};
+		[6] = {
+			CFrame.new(-1743, 8, 274)
+		};
+		[7] = {
+			CFrame.new(-1811.5, 8, 75.5)
+		};
+	};
+}
+
+-- // General Functions \\ --
+
+local function Teleport(Position: CFrame)
+	local Character = Player.Character
+	if not Character then return false end
+
+	local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+	local HumanoidRootPart = Character:FindFirstChild("HumanoidRootPart")
+
+	if not Humanoid or not HumanoidRootPart then
+		return false
+	end
+
+	Character:PivotTo(Position)
+	return true
+end
+
+local function IsNight()
+	local NightAttribute = Lighting:GetAttribute("IsNight")
+	if NightAttribute == true then
+		return true
+	else
+		return false
+	end
+end
+
+local function SetAutoFarm(Name: string, Enabled: boolean)
+	if not AutoFarms[Name] then
+		return
+	end
+
+	if Enabled and Name == "Variants" then
+		AutoFarms.Items.Active = false
+	elseif Enabled and Name == "Items" then
+		AutoFarms.Variants.Active = false
+	end
+
+	AutoFarms[Name].Active = Enabled
+end
+
+-- // Functions & Variables \\ --
+
+local itemIndex, variantIndex = 1, 1
+
+local halloweenIndex = 1
+local halloweenNight = false
+local nextNightCheck = 0
+
+local NIGHT_CHECK_INTERVAL = 120 -- 2 minutos
+local DAY_CHECK_INTERVAL = 300 -- 5 minutos
+
+local function AutoObby()
+	local Obby = AutoFarms.Obby
+	if not Obby.Active then
+		return false
+	end
+
+	local CurrentTime = os.time()
+
+	for Difficulty, Config in pairs(Positions.Obby) do
+		if Obby.Difficulty[Difficulty] == true then
+			local CooldownEnd = Obby.DifficultyCD[Difficulty]
+
+			if not CooldownEnd or CurrentTime >= CooldownEnd then
+				if Teleport(Config[1]) then
+					local VictoryPart = ObbyParts[Difficulty .. "Obby"]
+
+					if VictoryPart then
+						ClaimObbyBonus:FireServer(VictoryPart)
+
+						Obby.DifficultyCD[Difficulty] = os.time() + Config.CD
+					end
+
+					return true
+				end
+			end
+		end
+	end
+
+	return false
+end
+
+
+local function AutoItems()
+	if not AutoFarms.Items.Active or #Positions.Items == 0 then
+		return false
+	end
+
+	local Config = Positions.Items[itemIndex]
+	if not Config then
+		return false
+	end
+
+	local ItemsPart = ItemParts["Part" .. itemIndex]
+	if not ItemsPart then
+		return false
+	end
+
+	if Teleport(Config[1]) then
+		ItemCollect:FireServer(ItemsPart)
+		itemIndex = (itemIndex % #Positions.Items) + 1
+
+		return true
+	end
+
+	return false
+end
+
+local function AutoVariants()
+	if not AutoFarms.Variants.Active or #Positions.Variants == 0 then
+		return false
+	end
+
+	local Config = Positions.Variants[variantIndex]
+	if not Config then
+		return false
+	end
+
+	local VariantPart = VariantParts["Part" .. variantIndex]
+	if not VariantPart then
+		return false
+	end
+
+	if Teleport(Config[1]) then
+		VariantCollect:FireServer(VariantPart)
+		variantIndex = (variantIndex % #Positions.Variants) + 1
+
+		return true
+	end
+
+	return false
+end
+
+local function AutoHalloween()
+	local Halloween = AutoFarms.Halloween
+
+	if not Halloween.Active then
+		return false
+	end
+
+	local CurrentTime = os.time()
+
+	if CurrentTime >= nextNightCheck then
+		halloweenNight = IsNight()
+
+		if halloweenNight then
+			nextNightCheck = CurrentTime + NIGHT_CHECK_INTERVAL
+		else
+			nextNightCheck = CurrentTime + DAY_CHECK_INTERVAL
+			return false
+		end
+	end
+
+	if not halloweenNight then
+		return false
+	end
+
+	local Config = Positions.Halloween[halloweenIndex]
+	if not Config then
+		return false
+	end
+
+	if Teleport(Config[1]) then
+		task.wait(0.2)
+
+		VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+
+		task.wait(0.1)
+
+		VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+		halloweenIndex = (halloweenIndex % #Positions.Halloween) + 1
+
+		return true
+	end
+
+	return false
+end
+
+
+--------------------------------------------------------------------------------------------------
+-----------------------------       //  MAIN LOOP  \\       --------------------------------------
+--------------------------------------------------------------------------------------------------
+
+task.spawn(function()
+	local lastItems = 0
+	local lastVariants = 0
+	local lastHalloween = 0
+
+	while true do
+		local now = os.clock()
+
+		-- PRIORIDADE 1: VARIANTS
+		if AutoFarms.Variants.Active
+			and now - lastVariants >= AutoFarms.Variants.TP_CD then
+
+			if AutoVariants() then
+				lastVariants = os.clock()
+				task.wait(0.1)
+				continue
+			end
+		end
+
+		-- PRIORIDADE 2: OBBY
+		if AutoFarms.Obby.Active then
+			if AutoObby() then
+				task.wait(0.1)
+				continue
+			end
+		end
+
+		-- PRIORIDADE 3: HALLOWEEN
+		if AutoFarms.Halloween.Active
+			and now - lastHalloween >= AutoFarms.Halloween.TP_CD then
+
+			if AutoHalloween() then
+				lastHalloween = os.clock()
+
+				local startTime = os.clock()
+
+				while os.clock() - startTime < 3 do
+					pcall(function()
+						VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+
+						task.wait(0.1)
+
+						VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+					end)
+
+					task.wait(0.1)
+				end
+
+				task.wait(0.1)
+				continue
+			end
+		end
+
+		-- PRIORIDADE 4: ITEMS
+		if AutoFarms.Items.Active
+			and now - lastItems >= AutoFarms.Items.TP_CD then
+
+			if AutoItems() then
+				lastItems = os.clock()
+				task.wait(0.1)
+				continue
+			end
+		end
+
+		task.wait(0.1)
+	end
+end)
+
+--------------------------------------------------------------------------------------------------
+-----------------------------       //  CREATE UI  \\       --------------------------------------
+--------------------------------------------------------------------------------------------------
+-- // Load UI Library
+
+local UI = loadstring(game:HttpGet("https://raw.githubusercontent.com/MigsV30/roblox-script/refs/heads/BL-Farm-Script/BL-Farm%20UI"))()
+
+-- // UI Configuration
+
+UI:SetTitle("BL: Farm")
+UI:SetSubtitle("GrindX Scripts")
+UI:ShowSelectionBar(true)
+
+-- // References
+
+local FeatureButtons = {}
+local DifficultyButtons = {}
+
+-- // Synchronize Features
+
+local function UpdateFeature(Name, Enabled)
+	-- Atualiza a configuração da feature.
+	SetAutoFarm(Name, Enabled)
+
+	-- Sincroniza o estado visual de features exclusivas.
+	if Name == "Variants" and Enabled then
+		if FeatureButtons.Items then
+			FeatureButtons.Items.SetEnabled(false)
+		end
+	elseif Name == "Items" and Enabled then
+		if FeatureButtons.Variants then
+			FeatureButtons.Variants.SetEnabled(false)
+		end
+	end
+end
+
+-- // Auto Variants
+FeatureButtons.Variants = UI:CreateContainerItem(
+	AutoFarms.Variants.Name,
+	AutoFarms.Variants.Desc,
+	false,
+	nil,
+	function(Enabled)
+		UpdateFeature("Variants", Enabled)
+	end)
+
+-- // Auto Obby
+FeatureButtons.Obby = UI:CreateContainerItem(
+	AutoFarms.Obby.Name,
+	AutoFarms.Obby.Desc,
+	false,
+	nil,
+	function(Enabled)
+		UpdateFeature("Obby", Enabled)
+	end)
+
+-- // Auto Halloween
+FeatureButtons.Halloween = UI:CreateContainerItem(
+	AutoFarms.Halloween.Name,
+	AutoFarms.Halloween.Desc,
+	false,
+	nil,
+	function(Enabled)
+		UpdateFeature("Halloween", Enabled)
+	end)
+
+-- // Auto Items
+FeatureButtons.Items = UI:CreateContainerItem(
+	AutoFarms.Items.Name,
+	AutoFarms.Items.Desc,
+	false,
+	nil,
+	function(Enabled)
+		UpdateFeature("Items", Enabled)
+	end)
+
+--------------------------------------------------------------------------------------------------
+-----------------------------       // OBBY DIFFICULTY  \\       ---------------------------------
+--------------------------------------------------------------------------------------------------
+
+local Difficulties = {
+	{
+		Name = "Easy",
+		Color = "Green"
+	},
+	{
+		Name = "Medium",
+		Color = "Blue"
+	},
+	{
+		Name = "Hard",
+		Color = "Orange"
+	}
+}
+
+-- // Create Difficulty Selectors
+
+for _, DifficultyConfig in ipairs(Difficulties) do
+	local DifficultyName = DifficultyConfig.Name
+
+	DifficultyButtons[DifficultyName] = UI:CreateSelectButton(DifficultyName, DifficultyConfig.Color,
+		function(IsSelected)
+			-- Atualiza a dificuldade selecionada.
+			AutoFarms.Obby.Difficulty[DifficultyName] = IsSelected
+
+			-- Limpa o cooldown ao desmarcar a dificuldade.
+			if not IsSelected then
+				AutoFarms.Obby.DifficultyCD[DifficultyName] = nil
+			end
+
+			print("[BL: Farm] Obby", DifficultyName, IsSelected and "ativado" or "desativado")
+		end)
+end
+
+--------------------------------------------------------------------------------------------------
+-----------------------------       // INITIAL STATE  \\       -----------------------------------
+--------------------------------------------------------------------------------------------------
+
+-- // Keep all features disabled when the UI starts.
+
+for Name, Button in pairs(FeatureButtons) do
+	Button.SetEnabled(AutoFarms[Name].Active)
+end
+
+for DifficultyName, Button in pairs(DifficultyButtons) do
+	Button.SetSelected(AutoFarms.Obby.Difficulty[DifficultyName] == true)
+end
