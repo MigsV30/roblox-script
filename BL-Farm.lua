@@ -239,21 +239,26 @@ task.spawn(function()
 	while true do
 		local now = os.clock()
 
-		-- PRIORIDADE 1: AUTO OBBY
-		-- Se algum Obby estiver pronto, nenhum outro farm executa.
-		local obbyExecuted = false
+		-- PRIORIDADE 1: VARIANTS
+		if Autos.AutoVariants.Active
+			and now - lastVariants >= TP_CD then
 
+			if RunAutoVariants() then
+				lastVariants = os.clock()
+				task.wait(0.1)
+				continue
+			end
+		end
+
+		-- PRIORIDADE 2: OBBY DISPONÍVEL
 		if Autos.AutoObby.Active then
-			obbyExecuted = RunAutoObby()
+			if RunAutoObby() then
+				task.wait(0.1)
+				continue
+			end
 		end
 
-		if obbyExecuted then
-			-- Evita executar outro farm neste ciclo.
-			task.wait(0.1)
-			continue
-		end
-
-		-- PRIORIDADE 2: ITEMS
+		-- PRIORIDADE 3: ITEMS
 		if Autos.AutoItems.Active
 			and now - lastItems >= TP_CD then
 
@@ -264,19 +269,9 @@ task.spawn(function()
 			end
 		end
 
-		-- PRIORIDADE 3: VARIANTS
-		if Autos.AutoVariants.Active
-			and now - lastVariants >= TP_CD then
-
-			if RunAutoVariants() then
-				lastVariants = os.clock()
-			end
-		end
-
 		task.wait(0.1)
 	end
 end)
-
 
 -- // Create UI \\ --
 
