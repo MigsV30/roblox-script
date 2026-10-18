@@ -294,7 +294,6 @@ local nextNightCheck = 0
 local NIGHT_CHECK_INTERVAL = 120 -- 2 minutos
 local DAY_CHECK_INTERVAL = 300 -- 5 minutos
 
-
 local function AutoObby()
 	local Obby = AutoFarms.Obby
 	if not Obby.Active then
@@ -313,13 +312,19 @@ local function AutoObby()
 
 					print(
 						"[BL: Farm] Teleport realizado | Dificuldade:",
-						Difficulty)
+						Difficulty
+					)
 
-					print(
-						"[BL: Farm] Chamando ClaimObbyBonus | Dificuldade:",
-						Difficulty)
+					for i = 1, 5 do
+						print(
+							"[BL: Farm] Chamando ClaimObbyBonus | Chamada:",
+							i,
+							"/5 | Dificuldade:",
+							Difficulty
+						)
 
-					ClaimObbyBonus:FireServer(VictoryPart)
+						ClaimObbyBonus:FireServer(VictoryPart)
+					end
 
 					Obby.DifficultyCD[Difficulty] = os.time() + Config.CD
 
@@ -347,12 +352,16 @@ local function AutoItems()
 	if Teleport(Config[1]) then
 		print("[BL: Farm] Teleport realizado | Item:", itemIndex)
 
-		print(
-			"[BL: Farm] Chamando CollectCollectableObject | Item:",
-			ItemsPart and ItemsPart.Name or "nil"
-		)
+		for i = 1, 5 do
+			print(
+				"[BL: Farm] Chamando CollectCollectableObject | Chamada:",
+				i,
+				"/5 | Item:",
+				ItemsPart and ItemsPart.Name or "nil"
+			)
 
-		ItemCollect:FireServer(ItemsPart)
+			ItemCollect:FireServer(ItemsPart)
+		end
 
 		itemIndex = (itemIndex % #Positions.Items) + 1
 
@@ -377,12 +386,16 @@ local function AutoVariants()
 	if Teleport(Config[1]) then
 		print("[BL: Farm] Teleport realizado | Variante:", variantIndex)
 
-		print(
-			"[BL: Farm] Chamando CollectVariantTokenSpawn | Variante:",
-			VariantPart and VariantPart.Name or "nil"
-		)
+		for i = 1, 5 do
+			print(
+				"[BL: Farm] Chamando CollectVariantTokenSpawn | Chamada:",
+				i,
+				"/5 | Variante:",
+				VariantPart and VariantPart.Name or "nil"
+			)
 
-		VariantCollect:FireServer(VariantPart)
+			VariantCollect:FireServer(VariantPart)
+		end
 
 		variantIndex = (variantIndex % #Positions.Variants) + 1
 
