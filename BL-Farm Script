@@ -505,7 +505,7 @@ local UI = loadstring(game:HttpGet("https://raw.githubusercontent.com/MigsV30/ro
 
 UI:SetTitle("BL: Farm")
 UI:SetSubtitle("GrindX Scripts")
-UI:ShowSelectionBar(true)
+UI:ShowSelectionBar(false)
 
 -- // References
 
@@ -544,11 +544,16 @@ FeatureButtons.Variants = UI:CreateContainerItem(
 FeatureButtons.Obby = UI:CreateContainerItem(
 	AutoFarms.Obby.Name,
 	AutoFarms.Obby.Desc,
-	false,
-	nil,
+	true,
+	"Difficulty",
 	function(Enabled)
 		UpdateFeature("Obby", Enabled)
-	end)
+	end,
+	function()
+		UI:ShowSelectionBar(not UI.SelectScroll.Visible)
+	end
+)
+
 
 -- // Auto Halloween
 FeatureButtons.Halloween = UI:CreateContainerItem(
@@ -581,11 +586,11 @@ local Difficulties = {
 	},
 	{
 		Name = "Medium",
-		Color = "Blue"
+		Color = "Orange"
 	},
 	{
 		Name = "Hard",
-		Color = "Orange"
+		Color = "Red"
 	}
 }
 
@@ -618,6 +623,11 @@ for Name, Button in pairs(FeatureButtons) do
 	Button.SetEnabled(AutoFarms[Name].Active)
 end
 
+-- Todas as dificuldades começam desmarcadas.
 for DifficultyName, Button in pairs(DifficultyButtons) do
-	Button.SetSelected(AutoFarms.Obby.Difficulty[DifficultyName] == true)
+	AutoFarms.Obby.Difficulty[DifficultyName] = false
+	Button.SetSelected(false)
 end
+
+-- A barra começa escondida.
+UI:ShowSelectionBar(false)
