@@ -338,13 +338,20 @@ local function Teleport(Position: CFrame)
 	return true
 end
 
+-- // Day & Night Schedule \\ --
+
+local CYCLE_START_TIMESTAMP = 1787848200
+local DAY_DURATION = 600
+local NIGHT_DURATION = 300
+local CYCLE_DURATION = DAY_DURATION + NIGHT_DURATION
+
 local function IsNight()
-	local NightAttribute = Lighting:GetAttribute("IsNight")
-	if NightAttribute == true then
-		return true
-	else
-		return false
-	end
+	local ServerTime = workspace:GetServerTimeNow()
+
+	local CycleTime =
+		(ServerTime - CYCLE_START_TIMESTAMP) % CYCLE_DURATION
+
+	return CycleTime >= DAY_DURATION
 end
 
 local function SetAutoFarm(Name: string, Enabled: boolean)
