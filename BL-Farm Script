@@ -294,6 +294,7 @@ local nextNightCheck = 0
 local NIGHT_CHECK_INTERVAL = 120 -- 2 minutos
 local DAY_CHECK_INTERVAL = 300 -- 5 minutos
 
+
 local function AutoObby()
 	local Obby = AutoFarms.Obby
 	if not Obby.Active then
@@ -310,12 +311,17 @@ local function AutoObby()
 				if Teleport(Config[1]) then
 					local VictoryPart = ObbyParts[Difficulty .. "Obby"]
 
-					if VictoryPart then
-						print("[BL: Farm] Chamando ClaimObbyBonus | Dificuldade:", Difficulty, "| Parte:", VictoryPart.Name)
-						ClaimObbyBonus:FireServer(VictoryPart)
+					print(
+						"[BL: Farm] Teleport realizado | Dificuldade:",
+						Difficulty)
 
-						Obby.DifficultyCD[Difficulty] = os.time() + Config.CD
-					end
+					print(
+						"[BL: Farm] Chamando ClaimObbyBonus | Dificuldade:",
+						Difficulty)
+
+					ClaimObbyBonus:FireServer(VictoryPart)
+
+					Obby.DifficultyCD[Difficulty] = os.time() + Config.CD
 
 					return true
 				end
@@ -325,7 +331,6 @@ local function AutoObby()
 
 	return false
 end
-
 
 local function AutoItems()
 	if not AutoFarms.Items.Active or #Positions.Items == 0 then
@@ -338,13 +343,17 @@ local function AutoItems()
 	end
 
 	local ItemsPart = ItemParts["Part" .. itemIndex]
-	if not ItemsPart then
-		return false
-	end
 
 	if Teleport(Config[1]) then
-		print("[BL: Farm] Chamando CollectCollectableObject | Item:", ItemsPart.Name)
+		print("[BL: Farm] Teleport realizado | Item:", itemIndex)
+
+		print(
+			"[BL: Farm] Chamando CollectCollectableObject | Item:",
+			ItemsPart and ItemsPart.Name or "nil"
+		)
+
 		ItemCollect:FireServer(ItemsPart)
+
 		itemIndex = (itemIndex % #Positions.Items) + 1
 
 		return true
@@ -364,13 +373,17 @@ local function AutoVariants()
 	end
 
 	local VariantPart = VariantParts["Part" .. variantIndex]
-	if not VariantPart then
-		return false
-	end
 
 	if Teleport(Config[1]) then
-		print("[BL: Farm] Chamando CollectVariantTokenSpawn | Variante:", VariantPart.Name)
+		print("[BL: Farm] Teleport realizado | Variante:", variantIndex)
+
+		print(
+			"[BL: Farm] Chamando CollectVariantTokenSpawn | Variante:",
+			VariantPart and VariantPart.Name or "nil"
+		)
+
 		VariantCollect:FireServer(VariantPart)
+
 		variantIndex = (variantIndex % #Positions.Variants) + 1
 
 		return true
