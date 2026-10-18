@@ -164,55 +164,119 @@ local function Teleport(Position: CFrame)
 	return true
 end
 
+
 local itemIndex, variantIndex = 1, 1
 
 local function RunAutoObby()
 	local AutoObby = Autos.AutoObby
-	if not AutoObby.Active then return end
+	if not AutoObby.Active then
+		return false
+	end
+
 	local currentTime = os.time()
+
 	for Difficulty, Config in pairs(obbyRewardPos) do
-		if AutoObby.Active and AutoObby.Difficulty[Difficulty] then
+		if AutoObby.Difficulty[Difficulty] then
 			local cooldownEnd = AutoObby.DifficultyCD[Difficulty]
+
 			if not cooldownEnd or currentTime >= cooldownEnd then
 				if Teleport(Config[1]) then
-					AutoObby.DifficultyCD[Difficulty] = currentTime + Config.CD
-					return 
+					-- Inicia o cooldown após o teleporte
+					AutoObby.DifficultyCD[Difficulty] =
+						os.time() + Config.CD
+
+					-- Um Obby por vez
+					return true
 				end
 			end
 		end
 	end
+
+	-- Nenhum Obby selecionado está pronto
+	return false
 end
 
 local function RunAutoItems()
-	if not Autos.AutoItems.Active or #itemsSpawn == 0 then return end
+	if not Autos.AutoItems.Active or #itemsSpawn == 0 then
+		return false
+	end
+
 	local config = itemsSpawn[itemIndex]
-	if config then Teleport(config[1]) end
-	itemIndex = (itemIndex % #itemsSpawn) + 1
+	if not config then
+		return false
+	end
+
+	if Teleport(config[1]) then
+		itemIndex = (itemIndex % #itemsSpawn) + 1
+		return true
+	end
+
+	return false
 end
 
 local function RunAutoVariants()
-	if not Autos.AutoVariants.Active or #variantsSpawn == 0 then return end
+	if not Autos.AutoVariants.Active or #variantsSpawn == 0 then
+		return false
+	end
+
 	local config = variantsSpawn[variantIndex]
-	if config then Teleport(config[1]) end
-	variantIndex = (variantIndex % #variantsSpawn) + 1
+	if not config then
+		return false
+	end
+
+	if Teleport(config[1]) then
+		variantIndex = (variantIndex % #variantsSpawn) + 1
+		return true
+	end
+
+	return false
 end
 
 task.spawn(function()
-	local lastItems, lastVariants = 0, 0
+	local lastItems = 0
+	local lastVariants = 0
+
 	while true do
 		local now = os.clock()
-		if Autos.AutoObby.Active then RunAutoObby() end
-		if Autos.AutoItems.Active and now - lastItems >= TP_CD then
-			RunAutoItems()
-			lastItems = now
+
+		-- PRIORIDADE 1: AUTO OBBY
+		-- Se algum Obby estiver pronto, nenhum outro farm executa.
+		local obbyExecuted = false
+
+		if Autos.AutoObby.Active then
+			obbyExecuted = RunAutoObby()
 		end
-		if Autos.AutoVariants.Active and now - lastVariants >= TP_CD then
-			RunAutoVariants()
-			lastVariants = now
+
+		if obbyExecuted then
+			-- Evita executar outro farm neste ciclo.
+			task.wait(0.1)
+			continue
 		end
+
+		-- PRIORIDADE 2: ITEMS
+		if Autos.AutoItems.Active
+			and now - lastItems >= TP_CD then
+
+			if RunAutoItems() then
+				lastItems = os.clock()
+				task.wait(0.1)
+				continue
+			end
+		end
+
+		-- PRIORIDADE 3: VARIANTS
+		if Autos.AutoVariants.Active
+			and now - lastVariants >= TP_CD then
+
+			if RunAutoVariants() then
+				lastVariants = os.clock()
+			end
+		end
+
 		task.wait(0.1)
 	end
 end)
+
 
 -- // Create UI \\ --
 
