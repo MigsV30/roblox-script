@@ -1,12 +1,6 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-local Remotes = ReplicatedStorage:WaitForChild("Remotes")
-
-local VariantSpawnRemote = Remotes:WaitForChild("VariantTokenSpawned")
-local VariantCollectedRemote = Remotes:WaitForChild("VariantTokenFound")
 
 local Player = Players.LocalPlayer
 local PlayerGui = Player.PlayerGui
@@ -147,67 +141,81 @@ local Autos = {
 	};
 }
 
-local TP_CD = 0.5
+local TP_CD = 1.5
 local interactKeybind = "E"
 
 local function Teleport(Position: CFrame)
-    local Character = Player.Character
-    if not Character then return false end
-    Character:PivotTo(Position)
-    return true
+	local Character = Player.Character
+	if not Character then return false end
+
+	local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+	local HumanoidRootPart = Character:FindFirstChild("HumanoidRootPart")
+
+	if not Humanoid or not HumanoidRootPart then
+		return false
+	end
+
+	Character:PivotTo(Position)
+
+	task.wait(0.3)
+
+	Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+
+	return true
 end
 
 local itemIndex, variantIndex = 1, 1
 
 local function RunAutoObby()
-    local AutoObby = Autos.AutoObby
-    if not AutoObby.Active then return end
-    local currentTime = os.time()
-    for Difficulty, Config in pairs(obbyRewardPos) do
-        if AutoObby.Active and AutoObby.Difficulty[Difficulty] then
-            local cooldownEnd = AutoObby.DifficultyCD[Difficulty]
-            if not cooldownEnd or currentTime >= cooldownEnd then
-                if Teleport(Config[1]) then
-                    AutoObby.DifficultyCD[Difficulty] = currentTime + Config.CD
-                    return -- apenas uma dificuldade por ciclo
-                end
-            end
-        end
-    end
+	local AutoObby = Autos.AutoObby
+	if not AutoObby.Active then return end
+	local currentTime = os.time()
+	for Difficulty, Config in pairs(obbyRewardPos) do
+		if AutoObby.Active and AutoObby.Difficulty[Difficulty] then
+			local cooldownEnd = AutoObby.DifficultyCD[Difficulty]
+			if not cooldownEnd or currentTime >= cooldownEnd then
+				if Teleport(Config[1]) then
+					AutoObby.DifficultyCD[Difficulty] = currentTime + Config.CD
+					return 
+				end
+			end
+		end
+	end
 end
 
 local function RunAutoItems()
-    if not Autos.AutoItems.Active or #itemsSpawn == 0 then return end
-    local config = itemsSpawn[itemIndex]
-    if config then Teleport(config[1]) end
-    itemIndex = (itemIndex % #itemsSpawn) + 1
+	if not Autos.AutoItems.Active or #itemsSpawn == 0 then return end
+	local config = itemsSpawn[itemIndex]
+	if config then Teleport(config[1]) end
+	itemIndex = (itemIndex % #itemsSpawn) + 1
 end
 
 local function RunAutoVariants()
-    if not Autos.AutoVariants.Active or #variantsSpawn == 0 then return end
-    local config = variantsSpawn[variantIndex]
-    if config then Teleport(config[1]) end
-    variantIndex = (variantIndex % #variantsSpawn) + 1
+	if not Autos.AutoVariants.Active or #variantsSpawn == 0 then return end
+	local config = variantsSpawn[variantIndex]
+	if config then Teleport(config[1]) end
+	variantIndex = (variantIndex % #variantsSpawn) + 1
 end
 
 task.spawn(function()
-    local lastItems, lastVariants = 0, 0
-    while true do
-        local now = os.clock()
-        if Autos.AutoObby.Active then RunAutoObby() end
-        if Autos.AutoItems.Active and now - lastItems >= TP_CD then
-            RunAutoItems()
-            lastItems = now
-        end
-        if Autos.AutoVariants.Active and now - lastVariants >= TP_CD then
-            RunAutoVariants()
-            lastVariants = now
-        end
-        task.wait(0.1)
-    end
+	local lastItems, lastVariants = 0, 0
+	while true do
+		local now = os.clock()
+		if Autos.AutoObby.Active then RunAutoObby() end
+		if Autos.AutoItems.Active and now - lastItems >= TP_CD then
+			RunAutoItems()
+			lastItems = now
+		end
+		if Autos.AutoVariants.Active and now - lastVariants >= TP_CD then
+			RunAutoVariants()
+			lastVariants = now
+		end
+		task.wait(0.1)
+	end
 end)
 
 -- // Create UI \\ --
+
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Parent = PlayerGui
 ScreenGui.Name = "BL: Farm"
@@ -215,6 +223,7 @@ ScreenGui.IgnoreGuiInset = true
 ScreenGui.ResetOnSpawn = false
 
 -- Main Frame
+
 local MainFrame = Instance.new("Frame")
 MainFrame.Parent = ScreenGui
 MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -238,6 +247,7 @@ MainUIStroke.Thickness = 0.006
 MainUIStroke.Transparency = 0.2
 
 -- Top Frame
+
 local TopFrame = Instance.new("Frame")
 TopFrame.Parent = MainFrame
 TopFrame.Name = "Top"
@@ -310,6 +320,7 @@ SubtitleStroke.StrokeSizingMode = Enum.StrokeSizingMode.ScaledSize
 SubtitleStroke.Thickness = 0.06
 
 -- Bottom Frame
+
 local BottomFrame = Instance.new("Frame")
 BottomFrame.Parent = MainFrame
 BottomFrame.Name = "Bottom"
@@ -364,6 +375,7 @@ SpaceSelectFrame.LayoutOrder = 999999999
 SpaceSelectFrame.Size = UDim2.new(0.01, 0, 0.9, 0)
 
 -- // Main Container
+
 local MainContainer = Instance.new("ScrollingFrame")
 MainContainer.Parent = MainFrame
 MainContainer.Name = "Container"
@@ -397,11 +409,13 @@ MainContainerSpace.Size = UDim2.new(0.956, 0, 0.1, 0)
 MainContainerSpace.LayoutOrder = 999999999
 
 -- // Create Container Items
+
 local function CreateContainerItem(ItemName, ItemDesc, HasSelection, SelectText, OnToggleChanged)
 	HasSelection = HasSelection or false
 	SelectText = SelectText or "Select"
 
 	-- // Container
+
 	local ContainerItem = Instance.new("Frame")
 	ContainerItem.Name = ItemName
 	ContainerItem.Parent = MainContainer
@@ -431,6 +445,7 @@ local function CreateContainerItem(ItemName, ItemDesc, HasSelection, SelectText,
 	OuterStroke.Thickness = 0.04
 
 	-- // Name
+
 	local NameLabel = Instance.new("TextLabel")
 	NameLabel.Name = "Name"
 	NameLabel.Parent = ContainerItem
@@ -452,6 +467,7 @@ local function CreateContainerItem(ItemName, ItemDesc, HasSelection, SelectText,
 	NameStroke.Thickness = 0.06
 
 	-- // Description
+
 	local Desc = Instance.new("TextLabel")
 	Desc.Name = "Desc"
 	Desc.Parent = ContainerItem
@@ -475,6 +491,7 @@ local function CreateContainerItem(ItemName, ItemDesc, HasSelection, SelectText,
 
 
 	-- // Button Factory
+
 	local function CreateButton(Name, Text, Position, ColorName)
 		local Button = Instance.new("TextButton")
 		Button.Name = Name
@@ -518,6 +535,7 @@ local function CreateContainerItem(ItemName, ItemDesc, HasSelection, SelectText,
 		ShadowGradient.Transparency = gradientTranparency
 
 		-- // Button Text
+
 		local TextLabel = Instance.new("TextLabel")
 		TextLabel.Name = "Label"
 		TextLabel.Parent = Shadow
@@ -542,6 +560,7 @@ local function CreateContainerItem(ItemName, ItemDesc, HasSelection, SelectText,
 	end
 
 	-- // Toggle Button
+
 	local ToggleButton, ToggleLabel = CreateButton(
 		"Toggle",
 		"OFF",
@@ -550,7 +569,9 @@ local function CreateContainerItem(ItemName, ItemDesc, HasSelection, SelectText,
 	)
 
 	-- // Selection Button
+
 	local SelectButton
+
 	if HasSelection then
 		SelectButton = CreateButton(
 			"Select",
@@ -561,7 +582,9 @@ local function CreateContainerItem(ItemName, ItemDesc, HasSelection, SelectText,
 	end
 
 	-- // Toggle Logic
+
 	local Enabled = false
+
 	local function SetEnabled(Value)
 		Enabled = Value
 
@@ -580,6 +603,7 @@ local function CreateContainerItem(ItemName, ItemDesc, HasSelection, SelectText,
 	end)
 
 	-- // Return References
+
 	return {
 		Container = ContainerItem,
 		ToggleButton = ToggleButton,
@@ -594,12 +618,14 @@ local function CreateContainerItem(ItemName, ItemDesc, HasSelection, SelectText,
 end
 
 -- // Create Select Button
+
 local function CreateSelectButton(Name, ColorName, OnSelectionChanged)
 	local Button = Instance.new("TextButton")
 	Button.Name = Name
 	Button.Size = UDim2.new(0.25, 0, 0.9, 0)
 	Button.Text = ""
 	Button.AutoButtonColor = false
+	Button.BackgroundColor3 = Color3.fromRGB(255,255,255)
 	Button.Parent = SelectScroll
 
 	local ButtonCorner = Instance.new("UICorner")
@@ -633,6 +659,7 @@ local function CreateSelectButton(Name, ColorName, OnSelectionChanged)
 	ShadowGradient.Transparency = gradientTranparency
 
 	-- // Button Text
+
 	local TextLabel = Instance.new("TextLabel")
 	TextLabel.Name = "Label"
 	TextLabel.Parent = Shadow
@@ -654,6 +681,7 @@ local function CreateSelectButton(Name, ColorName, OnSelectionChanged)
 	TextLabelStroke.StrokeSizingMode = Enum.StrokeSizingMode.ScaledSize
 
 	-- // Selected Icon
+
 	local Selected = Instance.new("ImageLabel")
 	Selected.Name = "Selected"
 	Selected.Parent = Shadow
@@ -667,6 +695,7 @@ local function CreateSelectButton(Name, ColorName, OnSelectionChanged)
 	Selected.ZIndex = 4
 
 	-- // Selection Logic
+
 	local IsSelected = false
 
 	local function SetSelected(Value)
@@ -696,6 +725,7 @@ local function CreateSelectButton(Name, ColorName, OnSelectionChanged)
 end
 
 -- // Request Functions
+
 local AutoObbyUI = CreateContainerItem(
 	Autos.AutoObby.Name,
 	Autos.AutoObby.Desc,
@@ -726,10 +756,6 @@ local AutoVariantsUI = CreateContainerItem(
 	end
 )
 
--- // Difficulty Selector
--- The selected difficulties live in Autos.AutoObby.Difficulty,
--- so destroying the UI buttons will not erase the player's choices.
-
 local DifficultyButtons = {}
 
 local DifficultyButtonConfig = {
@@ -750,7 +776,6 @@ local function CloseDifficultySelector()
 end
 
 local function OpenDifficultySelector()
-	-- Avoid creating duplicate buttons if the selector is already open.
 	if SelectScroll.Visible then
 		CloseDifficultySelector()
 		return
@@ -774,8 +799,8 @@ end
 AutoObbyUI.SelectButton.Activated:Connect(OpenDifficultySelector)
 
 UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
-    if gameProcessedEvent then return end
-    if input.KeyCode == Enum.KeyCode.LeftControl or input.KeyCode == Enum.KeyCode.RightControl then
-        ScreenGui.Enabled = not ScreenGui.Enabled
-    end
+	if gameProcessedEvent then return end
+	if input.KeyCode == Enum.KeyCode.LeftControl or input.KeyCode == Enum.KeyCode.RightControl then
+		ScreenGui.Enabled = not ScreenGui.Enabled
+	end
 end)
