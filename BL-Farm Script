@@ -310,20 +310,16 @@ local function AutoObby()
 				if Teleport(Config[1]) then
 					local VictoryPart = ObbyParts[Difficulty .. "Obby"]
 
-					print(
-						"[BL: Farm] Teleport realizado | Dificuldade:",
-						Difficulty
-					)
+					print("[BL: Farm] Teleport realizado | Dificuldade:", Difficulty)
 
 					for i = 1, 5 do
-						print(
-							"[BL: Farm] Chamando ClaimObbyBonus | Chamada:",
-							i,
-							"/5 | Dificuldade:",
-							Difficulty
-						)
+						print("[BL: Farm] ClaimObbyBonus | Chamada:", i, "/5")
 
 						ClaimObbyBonus:FireServer(VictoryPart)
+
+						if i < 5 then
+							task.wait(0.2)
+						end
 					end
 
 					Obby.DifficultyCD[Difficulty] = os.time() + Config.CD
@@ -353,14 +349,13 @@ local function AutoItems()
 		print("[BL: Farm] Teleport realizado | Item:", itemIndex)
 
 		for i = 1, 5 do
-			print(
-				"[BL: Farm] Chamando CollectCollectableObject | Chamada:",
-				i,
-				"/5 | Item:",
-				ItemsPart and ItemsPart.Name or "nil"
-			)
+			print("[BL: Farm] CollectCollectableObject | Chamada:", i, "/5")
 
 			ItemCollect:FireServer(ItemsPart)
+
+			if i < 5 then
+				task.wait(0.2)
+			end
 		end
 
 		itemIndex = (itemIndex % #Positions.Items) + 1
@@ -387,14 +382,13 @@ local function AutoVariants()
 		print("[BL: Farm] Teleport realizado | Variante:", variantIndex)
 
 		for i = 1, 5 do
-			print(
-				"[BL: Farm] Chamando CollectVariantTokenSpawn | Chamada:",
-				i,
-				"/5 | Variante:",
-				VariantPart and VariantPart.Name or "nil"
-			)
+			print("[BL: Farm] CollectVariantTokenSpawn | Chamada:", i, "/5")
 
 			VariantCollect:FireServer(VariantPart)
+
+			if i < 5 then
+				task.wait(0.2)
+			end
 		end
 
 		variantIndex = (variantIndex % #Positions.Variants) + 1
