@@ -141,7 +141,7 @@ local Autos = {
 	};
 }
 
-local TP_CD = 1.5
+local TP_CD = 3
 local interactKeybind = "E"
 
 local function Teleport(Position: CFrame)
@@ -157,7 +157,7 @@ local function Teleport(Position: CFrame)
 
 	Character:PivotTo(Position)
 
-	task.wait(0.3)
+	task.wait(1)
 
 	Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
 
