@@ -545,7 +545,7 @@ FeatureButtons.Obby = UI:CreateContainerItem(
 	AutoFarms.Obby.Name,
 	AutoFarms.Obby.Desc,
 	true,
-	"Difficulty",
+	"Select Difficulty",
 	function(Enabled)
 		UpdateFeature("Obby", Enabled)
 	end,
