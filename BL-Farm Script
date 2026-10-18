@@ -311,6 +311,7 @@ local function AutoObby()
 					local VictoryPart = ObbyParts[Difficulty .. "Obby"]
 
 					if VictoryPart then
+						print("[BL: Farm] Chamando ClaimObbyBonus | Dificuldade:", Difficulty, "| Parte:", VictoryPart.Name)
 						ClaimObbyBonus:FireServer(VictoryPart)
 
 						Obby.DifficultyCD[Difficulty] = os.time() + Config.CD
@@ -342,6 +343,7 @@ local function AutoItems()
 	end
 
 	if Teleport(Config[1]) then
+		print("[BL: Farm] Chamando CollectCollectableObject | Item:", ItemsPart.Name)
 		ItemCollect:FireServer(ItemsPart)
 		itemIndex = (itemIndex % #Positions.Items) + 1
 
@@ -367,6 +369,7 @@ local function AutoVariants()
 	end
 
 	if Teleport(Config[1]) then
+		print("[BL: Farm] Chamando CollectVariantTokenSpawn | Variante:", VariantPart.Name)
 		VariantCollect:FireServer(VariantPart)
 		variantIndex = (variantIndex % #Positions.Variants) + 1
 
@@ -407,6 +410,8 @@ local function AutoHalloween()
 
 	if Teleport(Config[1]) then
 		task.wait(0.2)
+
+		print("[BL: Farm] Interagindo com porta Halloween | Posição:", halloweenIndex)
 
 		VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
 
