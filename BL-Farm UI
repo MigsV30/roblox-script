@@ -92,6 +92,7 @@ local function AddStroke(Parent, Color, Thickness, Transparency)
 	Stroke.Thickness = Thickness or 0.04
 	Stroke.Transparency = Transparency or 0
 	Stroke.Parent = Parent
+	Stroke.StrokeSizingMode = Enum.StrokeSizingMode.ScaledSize
 
 	return Stroke
 end
@@ -101,6 +102,7 @@ local function AddTextStroke(Parent, Thickness)
 	Stroke.Color = Color3.new(0, 0, 0)
 	Stroke.Thickness = Thickness or 0.06
 	Stroke.Parent = Parent
+	Stroke.StrokeSizingMode = Enum.StrokeSizingMode.ScaledSize
 
 	return Stroke
 end
@@ -127,14 +129,9 @@ MainFrame.Size = UDim2.new(0.45, 0, 0.5, 0)
 
 AddCorner(MainFrame, UDim.new(0.05, 0))
 
-local MainUIStroke = AddStroke(
-	MainFrame,
-	Color3.fromRGB(115, 105, 255),
-	0.006,
-	0.2
-)
-
-MainUIStroke.StrokeSizingMode = Enum.StrokeSizingMode.ScaledSize
+local MainUIStroke = AddStroke(MainFrame, Color3.fromRGB(115, 105, 255), 0.006,0.2)
+MainUIStroke.BorderStrokePosition = Enum.BorderStrokePosition.Inner
+MainUIStroke.BorderOffset = UDim.new(-0.005, 0, 0, 0)
 
 -- // Top Frame
 
@@ -153,7 +150,7 @@ local TopCorner = TopFrame:FindFirstChildOfClass("UICorner")
 TopCorner.BottomLeftRadius = UDim.new(0, 0)
 TopCorner.BottomRightRadius = UDim.new(0, 0)
 
-AddStroke(TopFrame, Color3.new(0, 0, 0), 0.03)
+local TopStroke = AddStroke(TopFrame, Color3.new(0, 0, 0), 0.03)
 
 local Title = Instance.new("TextLabel")
 Title.Name = "Title"
@@ -207,7 +204,7 @@ local BottomCorner = BottomFrame:FindFirstChildOfClass("UICorner")
 BottomCorner.TopLeftRadius = UDim.new(0, 0)
 BottomCorner.TopRightRadius = UDim.new(0, 0)
 
-AddStroke(BottomFrame, Color3.new(0, 0, 0), 0.03)
+local BottomStroke = AddStroke(BottomFrame, Color3.new(0, 0, 0), 0.03)
 
 -- // Select Scroll
 
