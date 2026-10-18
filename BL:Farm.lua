@@ -5,9 +5,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 
-local ItemSpawnRemotes = Remotes:WaitForChild("ItemRainDrop")
-local ItemCollectedRemote = Remotes:WaitForChild("CollectItemRainItem")
-
+-- Remotes de Variant; os remotes de Item foram removidos.
 local VariantSpawnRemote = Remotes:WaitForChild("VariantTokenSpawned")
 local VariantCollectedRemote = Remotes:WaitForChild("VariantTokenFound")
 
@@ -150,65 +148,65 @@ local Autos = {
 	};
 }
 
-local TP_CD = 1.5
+local TP_CD = 0.5
 local interactKeybind = "E"
 
 local function Teleport(Position: CFrame)
-	local Character = Player.Character
-	if not Character then return false end
-	Character:PivotTo(Position)
-	return true
+    local Character = Player.Character
+    if not Character then return false end
+    Character:PivotTo(Position)
+    return true
 end
 
 -- Os farms executam somente quando o Active correspondente estiver ligado.
 local itemIndex, variantIndex = 1, 1
 
 local function RunAutoObby()
-	local AutoObby = Autos.AutoObby
-	if not AutoObby.Active then return end
-	local currentTime = os.time()
-	for Difficulty, Config in pairs(obbyRewardPos) do
-		if AutoObby.Active and AutoObby.Difficulty[Difficulty] then
-			local cooldownEnd = AutoObby.DifficultyCD[Difficulty]
-			if not cooldownEnd or currentTime >= cooldownEnd then
-				if Teleport(Config[1]) then
-					AutoObby.DifficultyCD[Difficulty] = currentTime + Config.CD
-					return -- apenas uma dificuldade por ciclo
-				end
-			end
-		end
-	end
+    local AutoObby = Autos.AutoObby
+    if not AutoObby.Active then return end
+    local currentTime = os.time()
+    for Difficulty, Config in pairs(obbyRewardPos) do
+        if AutoObby.Active and AutoObby.Difficulty[Difficulty] then
+            local cooldownEnd = AutoObby.DifficultyCD[Difficulty]
+            if not cooldownEnd or currentTime >= cooldownEnd then
+                if Teleport(Config[1]) then
+                    AutoObby.DifficultyCD[Difficulty] = currentTime + Config.CD
+                    return -- apenas uma dificuldade por ciclo
+                end
+            end
+        end
+    end
 end
 
 local function RunAutoItems()
-	if not Autos.AutoItems.Active or #itemsSpawn == 0 then return end
-	local config = itemsSpawn[itemIndex]
-	if config then Teleport(config[1]) end
-	itemIndex = (itemIndex % #itemsSpawn) + 1
+    if not Autos.AutoItems.Active or #itemsSpawn == 0 then return end
+    local config = itemsSpawn[itemIndex]
+    if config then Teleport(config[1]) end
+    itemIndex = (itemIndex % #itemsSpawn) + 1
 end
 
 local function RunAutoVariants()
-	if not Autos.AutoVariants.Active or #variantsSpawn == 0 then return end
-	local config = variantsSpawn[variantIndex]
-	if config then Teleport(config[1]) end
-	variantIndex = (variantIndex % #variantsSpawn) + 1
+    if not Autos.AutoVariants.Active or #variantsSpawn == 0 then return end
+    local config = variantsSpawn[variantIndex]
+    if config then Teleport(config[1]) end
+    variantIndex = (variantIndex % #variantsSpawn) + 1
 end
 
 task.spawn(function()
-	local lastItems, lastVariants = 0, 0
-	while true do
-		local now = os.clock()
-		if Autos.AutoObby.Active then RunAutoObby() end
-		if Autos.AutoItems.Active and now - lastItems >= TP_CD then
-			RunAutoItems()
-			lastItems = now
-		end
-		if Autos.AutoVariants.Active and now - lastVariants >= TP_CD then
-			RunAutoVariants()
-			lastVariants = now
-		end
-		task.wait(0.1)
-	end
+    local lastItems, lastVariants = 0, 0
+    while true do
+        local now = os.clock()
+        if Autos.AutoObby.Active then RunAutoObby() end
+        if Autos.AutoItems.Active and now - lastItems >= TP_CD then
+            RunAutoItems()
+            lastItems = now
+        end
+        if Autos.AutoVariants.Active and now - lastVariants >= TP_CD then
+            RunAutoVariants()
+            lastVariants = now
+        end
+        task.wait(0.1)
+    end
 end)
 
 -- // Create UI \\ --
@@ -621,7 +619,6 @@ local function CreateSelectButton(Name, ColorName, OnSelectionChanged)
 	Button.Name = Name
 	Button.Size = UDim2.new(0.25, 0, 0.9, 0)
 	Button.Text = ""
-	Button.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	Button.AutoButtonColor = false
 	Button.Parent = SelectScroll
 
@@ -802,16 +799,15 @@ AutoObbyUI.SelectButton.Activated:Connect(OpenDifficultySelector)
 
 -- // Remote Connections
 
-ItemSpawnRemotes.OnClientEvent:Connect(ItemsCollect)
-ItemCollectedRemote.OnClientEvent:Connect(StopItemsCollect)
-
-VariantSpawnRemote.OnClientEvent:Connect(VariantsCollect)
-VariantCollectedRemote.OnClientEvent:Connect(StopVariantsCollect)
+-- Conexoes de Variant ficam sem handlers aqui porque VariantsCollect e
+-- StopVariantsCollect nao existem neste script original. Evita erros de runtime.
+-- VariantSpawnRemote envia o nome da Variant (ex.: "Shadow", "Predator",
+-- "Flow State" ou "Unknown"). VariantCollectedRemote envia PlayerName e Variant.
 
 -- Ctrl alterna a visibilidade da interface sem destruir o ScreenGui.
 UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
-	if gameProcessedEvent then return end
-	if input.KeyCode == Enum.KeyCode.LeftControl or input.KeyCode == Enum.KeyCode.RightControl then
-		ScreenGui.Enabled = not ScreenGui.Enabled
-	end
+    if gameProcessedEvent then return end
+    if input.KeyCode == Enum.KeyCode.LeftControl or input.KeyCode == Enum.KeyCode.RightControl then
+        ScreenGui.Enabled = not ScreenGui.Enabled
+    end
 end)
