@@ -150,7 +150,7 @@ local Autos = {
 	};
 }
 
-local TP_CD = 0.5
+local TP_CD = 1.5
 local interactKeybind = "E"
 
 local function Teleport(Position: CFrame)
@@ -621,6 +621,7 @@ local function CreateSelectButton(Name, ColorName, OnSelectionChanged)
 	Button.Name = Name
 	Button.Size = UDim2.new(0.25, 0, 0.9, 0)
 	Button.Text = ""
+	Button.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	Button.AutoButtonColor = false
 	Button.Parent = SelectScroll
 
