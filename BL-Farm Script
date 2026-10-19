@@ -269,10 +269,16 @@ end
 
 -- // Indices & Cooldowns \\ --
 
-local ItemIndex = 1
+local itemIndex = 1
 local LastObbyTP = 0
 local VariantIndex = 1
 local HalloweenIndex = 1
+
+-- // Combined Variant + Halloween \\ --
+
+local CombinedPhase = "Variants"
+local CombinedVariantCount = 0
+local CombinedHalloweenCount = 0
 
 
 -- // Auto Obby \\ --
@@ -322,6 +328,40 @@ local function AutoObby()
 	return false
 end
 
+
+-- // Auto Items \\ --
+
+local function AutoItems()
+	local Items = AutoFarms.Items
+
+	if not Items.Active or #Positions.Items == 0 then
+		return false
+	end
+
+	local Config = Positions.Items[itemIndex]
+	local ItemPart = ItemParts[itemIndex]
+
+	if not Config or not ItemPart then
+		itemIndex = 1
+		return false
+	end
+
+	if Teleport(Config[1]) then
+		print("[BL: Farm] Teleporte realizado | Item:", itemIndex)
+
+		task.wait(0.5)
+
+		ItemCollect:FireServer(ItemPart)
+
+		print("[BL: Farm] CollectCollectableObject | Item:", itemIndex)
+
+		itemIndex = (itemIndex % #Positions.Items) + 1
+
+		return true
+	end
+
+	return false
+end
 
 -- // Auto Variants \\ --
 
@@ -406,6 +446,7 @@ local function AutoHalloween()
 	return true
 end
 
+
 -- // Main Loop \\ --
 
 task.spawn(function()
@@ -414,61 +455,131 @@ task.spawn(function()
 	local LastHalloween = 0
 
 	while true do
-		-- A verificação ocorre mesmo se Halloween estiver desligado.
 		CheckDayNight()
 
 		local Now = os.clock()
 		local DidWork = false
 
-		-- PRIORIDADE 1: VARIANTS
-		if AutoFarms.Variants.Active
-			and Now - LastVariants >= AutoFarms.Variants.TP_CD then
+		local VariantsActive = AutoFarms.Variants.Active
+		local HalloweenActive = AutoFarms.Halloween.Active
 
-			if AutoVariants() then
-				LastVariants = os.clock()
-				DidWork = true
-			end
-		end
+		-- PRIORIDADE ESPECIAL:
+		-- 13 TPs de Variant -> 10 casas de Halloween
+		if VariantsActive and HalloweenActive then
 
-		-- PRIORIDADE 2: OBBY
-		if not DidWork and AutoFarms.Obby.Active then
-			if AutoObby() then
-				DidWork = true
-			end
-		end
+			if CombinedPhase == "Variants" then
+				if Now - LastVariants >= AutoFarms.Variants.TP_CD then
+					if AutoVariants() then
+						LastVariants = os.clock()
+						CombinedVariantCount += 1
+						DidWork = true
 
-		-- PRIORIDADE 3: HALLOWEEN
-		if not DidWork
-			and AutoFarms.Halloween.Active
-			and Now - LastHalloween >= AutoFarms.Halloween.TP_CD then
+						print(
+							"[BL: Farm] Variant:",
+							CombinedVariantCount,
+							"/",
+							#Positions.Variants
+						)
 
-			if AutoHalloween() then
-				LastHalloween = os.clock()
+						if CombinedVariantCount >= #Positions.Variants then
+							CombinedVariantCount = 0
+							CombinedPhase = "Halloween"
 
-				-- Mantém as interações adicionais do código original.
-				local StartTime = os.clock()
-
-				while os.clock() - StartTime < 3 do
-					if not CheckDayNight() then
-						break
+							print(
+								"[BL: Farm] Todos os Variants concluídos! Iniciando Halloween."
+							)
+						end
 					end
-
-					PressE()
-					task.wait(0.1)
 				end
 
-				DidWork = true
+			elseif CombinedPhase == "Halloween" then
+				if Now - LastHalloween >= AutoFarms.Halloween.TP_CD then
+					if AutoHalloween() then
+						LastHalloween = os.clock()
+						CombinedHalloweenCount += 1
+						DidWork = true
+
+						print(
+							"[BL: Farm] Halloween:",
+							CombinedHalloweenCount,
+							"/10 casas"
+						)
+
+						-- Mantém as interações adicionais do código original.
+						local StartTime = os.clock()
+
+						while os.clock() - StartTime < 3 do
+							if not CheckDayNight() then
+								break
+							end
+
+							PressE()
+							task.wait(0.1)
+						end
+
+						if CombinedHalloweenCount >= 10 then
+							CombinedHalloweenCount = 0
+							CombinedPhase = "Variants"
+
+							print(
+								"[BL: Farm] 10 casas concluídas! Reiniciando Variants."
+							)
+						end
+					end
+				end
 			end
-		end
 
-		-- PRIORIDADE 4: ITEMS
-		if not DidWork
-			and AutoFarms.Items.Active
-			and Now - LastItems >= AutoFarms.Items.TP_CD then
+		else
+			-- // Comportamento normal quando não estão ativos juntos \\ --
 
-			if AutoItems() then
-				LastItems = os.clock()
-				DidWork = true
+			if VariantsActive
+				and Now - LastVariants >= AutoFarms.Variants.TP_CD then
+
+				if AutoVariants() then
+					LastVariants = os.clock()
+					DidWork = true
+				end
+			end
+
+			-- PRIORIDADE 2: OBBY
+			if not DidWork and AutoFarms.Obby.Active then
+				if AutoObby() then
+					DidWork = true
+				end
+			end
+
+			-- PRIORIDADE 3: HALLOWEEN
+			if not DidWork
+				and HalloweenActive
+				and Now - LastHalloween >= AutoFarms.Halloween.TP_CD then
+
+				if AutoHalloween() then
+					LastHalloween = os.clock()
+
+					local StartTime = os.clock()
+
+					while os.clock() - StartTime < 3 do
+						if not CheckDayNight() then
+							break
+						end
+
+						PressE()
+						task.wait(0.1)
+					end
+
+					DidWork = true
+				end
+			end
+
+			-- PRIORIDADE 4: ITEMS
+			if not DidWork
+				and AutoFarms.Items.Active
+				and Now - LastItems >= AutoFarms.Items.TP_CD then
+
+				if AutoItems() then
+					LastItems = os.clock()
+					DidWork = true
+				end
 			end
 		end
 
