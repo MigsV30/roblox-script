@@ -1,0 +1,704 @@
+
+--[[
+    BL: Farm UI Library
+    Arquivo: BLFarm.lua
+
+    Funções públicas:
+        UI:CreateContainerItem(...)
+        UI:CreateSelectButton(...)
+        UI:Destroy()
+    
+    CreateContainerItem retorna:
+        Container
+        ToggleButton
+        SelectButton
+        IsEnabled()
+        SetEnabled(Value)
+        SetSelectText(Text)
+    
+    CreateSelectButton retorna:
+        Button
+        Selected
+        IsSelected()
+        SetSelected(Value)
+]]
+
+-- // Services
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+
+local Player = Players.LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
+
+-- // Prevent Duplicates
+
+local ExistingUI = PlayerGui:FindFirstChild("BL: Farm")
+
+if ExistingUI then
+	ExistingUI:Destroy()
+end
+
+-- // Configs
+
+local gradients = {
+	Red = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 88, 88)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(204, 0, 0))
+	}),
+
+	Blue = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(80, 147, 255)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 122, 204))
+	}),
+
+	Green = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(150, 255, 46)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(53, 204, 0))
+	}),
+
+	White = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(145, 145, 145))
+	}),
+
+	Orange = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 150, 44)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(204, 85, 0))
+	})
+}
+
+local gradientTransparency = NumberSequence.new({
+	NumberSequenceKeypoint.new(0, 0.5),
+	NumberSequenceKeypoint.new(1, 0)
+})
+
+local gradientsRotation = 90
+
+-- // Helpers
+
+local function AddCorner(Parent, Radius)
+	local Corner = Instance.new("UICorner")
+	Corner.CornerRadius = Radius or UDim.new(0.1, 0)
+	Corner.Parent = Parent
+
+	return Corner
+end
+
+local function AddStroke(Parent, Color, Thickness, Transparency)
+	local Stroke = Instance.new("UIStroke")
+	Stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	Stroke.Color = Color or Color3.new(0, 0, 0)
+	Stroke.Thickness = Thickness or 0.04
+	Stroke.Transparency = Transparency or 0
+	Stroke.Parent = Parent
+	Stroke.StrokeSizingMode = Enum.StrokeSizingMode.ScaledSize
+
+	return Stroke
+end
+
+local function AddTextStroke(Parent, Thickness)
+	local Stroke = Instance.new("UIStroke")
+	Stroke.Color = Color3.new(0, 0, 0)
+	Stroke.Thickness = Thickness or 0.06
+	Stroke.Parent = Parent
+	Stroke.StrokeSizingMode = Enum.StrokeSizingMode.ScaledSize
+
+	return Stroke
+end
+
+-- // ScreenGui
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "BL: Farm"
+ScreenGui.IgnoreGuiInset = true
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = PlayerGui
+
+-- // Main Frame
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = ScreenGui
+MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+MainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+MainFrame.BackgroundTransparency = 0.5
+MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+MainFrame.Size = UDim2.new(0.45, 0, 0.5, 0)
+
+AddCorner(MainFrame, UDim.new(0.05, 0))
+
+local MainUIStroke = AddStroke(MainFrame, Color3.fromRGB(115, 105, 255), 0.006,0.2)
+MainUIStroke.BorderStrokePosition = Enum.BorderStrokePosition.Inner
+MainUIStroke.BorderOffset = UDim.new(-0.005, 0, 0, 0)
+
+-- // Top Frame
+
+local TopFrame = Instance.new("Frame")
+TopFrame.Name = "Top"
+TopFrame.Parent = MainFrame
+TopFrame.AnchorPoint = Vector2.new(0.5, 0)
+TopFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+TopFrame.BackgroundTransparency = 0.4
+TopFrame.Position = UDim2.new(0.5, 0, 0.018, 0)
+TopFrame.Size = UDim2.new(0.98, 0, 0.127, 0)
+
+AddCorner(TopFrame, UDim.new(0.225, 0))
+
+local TopCorner = TopFrame:FindFirstChildOfClass("UICorner")
+TopCorner.BottomLeftRadius = UDim.new(0, 0)
+TopCorner.BottomRightRadius = UDim.new(0, 0)
+
+local TopStroke = AddStroke(TopFrame, Color3.new(0, 0, 0), 0.03)
+
+local Title = Instance.new("TextLabel")
+Title.Name = "Title"
+Title.Parent = TopFrame
+Title.AnchorPoint = Vector2.new(0, 0.5)
+Title.BackgroundTransparency = 1
+Title.Position = UDim2.new(0.015, 0, 0.321, 0)
+Title.Size = UDim2.new(0.394, 0, 0.401, 0)
+Title.ZIndex = 2
+Title.Font = Enum.Font.FredokaOne
+Title.Text = "BL: Farm"
+Title.TextColor3 = Color3.new(1, 1, 1)
+Title.TextScaled = true
+Title.TextWrapped = true
+Title.TextXAlignment = Enum.TextXAlignment.Left
+
+AddTextStroke(Title)
+
+local Subtitle = Instance.new("TextLabel")
+Subtitle.Name = "Subtitle"
+Subtitle.Parent = TopFrame
+Subtitle.AnchorPoint = Vector2.new(0, 0.5)
+Subtitle.BackgroundTransparency = 1
+Subtitle.Position = UDim2.new(0.015, 0, 0.7, 0)
+Subtitle.Size = UDim2.new(0.209, 0, 0.3, 0)
+Subtitle.ZIndex = 2
+Subtitle.Font = Enum.Font.FredokaOne
+Subtitle.Text = "GrindX Scripts"
+Subtitle.TextColor3 = Color3.new(1, 1, 1)
+Subtitle.TextScaled = true
+Subtitle.TextTransparency = 0.5
+Subtitle.TextWrapped = true
+Subtitle.TextXAlignment = Enum.TextXAlignment.Left
+
+AddTextStroke(Subtitle)
+
+-- // Bottom Frame
+
+local BottomFrame = Instance.new("Frame")
+BottomFrame.Name = "Bottom"
+BottomFrame.Parent = MainFrame
+BottomFrame.AnchorPoint = Vector2.new(0.5, 1)
+BottomFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+BottomFrame.BackgroundTransparency = 0.4
+BottomFrame.Position = UDim2.new(0.5, 0, 0.985, 0)
+BottomFrame.Size = UDim2.new(0.98, 0, 0.127, 0)
+
+AddCorner(BottomFrame, UDim.new(0.225, 0))
+
+local BottomCorner = BottomFrame:FindFirstChildOfClass("UICorner")
+BottomCorner.TopLeftRadius = UDim.new(0, 0)
+BottomCorner.TopRightRadius = UDim.new(0, 0)
+
+local BottomStroke = AddStroke(BottomFrame, Color3.new(0, 0, 0), 0.03)
+
+-- // Select Scroll
+
+local SelectScroll = Instance.new("ScrollingFrame")
+SelectScroll.Name = "SelectScroll"
+SelectScroll.Parent = BottomFrame
+SelectScroll.AnchorPoint = Vector2.new(0.5, 0.5)
+SelectScroll.BackgroundTransparency = 1
+SelectScroll.Position = UDim2.new(0.5, 0, 0.5, 0)
+SelectScroll.Size = UDim2.new(0.975, 0, 0.865, 0)
+SelectScroll.ZIndex = 2
+SelectScroll.AutomaticCanvasSize = Enum.AutomaticSize.X
+SelectScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+SelectScroll.ElasticBehavior = Enum.ElasticBehavior.WhenScrollable
+SelectScroll.HorizontalScrollBarInset = Enum.ScrollBarInset.Always
+SelectScroll.ScrollBarImageColor3 = Color3.fromRGB(115, 105, 255)
+SelectScroll.ScrollBarThickness = 3
+SelectScroll.ScrollingDirection = Enum.ScrollingDirection.X
+SelectScroll.Visible = false
+
+local SelectUIListLayout = Instance.new("UIListLayout")
+SelectUIListLayout.Parent = SelectScroll
+SelectUIListLayout.Padding = UDim.new(0.025, 0)
+SelectUIListLayout.FillDirection = Enum.FillDirection.Horizontal
+SelectUIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+local SpaceSelectFrame = Instance.new("Frame")
+SpaceSelectFrame.Name = "Space"
+SpaceSelectFrame.Parent = SelectScroll
+SpaceSelectFrame.BackgroundTransparency = 1
+SpaceSelectFrame.LayoutOrder = 999999999
+SpaceSelectFrame.Size = UDim2.new(0.01, 0, 0.9, 0)
+
+-- // Main Container
+
+local MainContainer = Instance.new("ScrollingFrame")
+MainContainer.Name = "Container"
+MainContainer.Parent = MainFrame
+MainContainer.AnchorPoint = Vector2.new(0.5, 0.5)
+MainContainer.BackgroundTransparency = 1
+MainContainer.Position = UDim2.new(0.499, 0, 0.5, 0)
+MainContainer.Size = UDim2.new(0.977, 0, 0.662, 0)
+MainContainer.ZIndex = 2
+MainContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y
+MainContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
+MainContainer.ScrollBarImageColor3 = Color3.new(0, 0, 0)
+MainContainer.ScrollBarThickness = 4
+MainContainer.ScrollingDirection = Enum.ScrollingDirection.Y
+
+local MainContainerUIListLayout = Instance.new("UIListLayout")
+MainContainerUIListLayout.Parent = MainContainer
+MainContainerUIListLayout.Padding = UDim.new(0.05, 0)
+MainContainerUIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+MainContainerUIListLayout.FillDirection = Enum.FillDirection.Vertical
+MainContainerUIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+local MainContainerUIPadding = Instance.new("UIPadding")
+MainContainerUIPadding.Parent = MainContainer
+MainContainerUIPadding.PaddingTop = UDim.new(0, 2)
+
+local MainContainerSpace = Instance.new("Frame")
+MainContainerSpace.Name = "Space"
+MainContainerSpace.Parent = MainContainer
+MainContainerSpace.BackgroundTransparency = 1
+MainContainerSpace.Size = UDim2.new(0.956, 0, 0.1, 0)
+MainContainerSpace.LayoutOrder = 999999999
+
+-- // Button Factory
+
+local function CreateButton(Parent, Name, Text, Position, ColorName, Size)
+	local Button = Instance.new("TextButton")
+	Button.Name = Name
+	Button.Parent = Parent
+	Button.AnchorPoint = Vector2.new(1, 0.5)
+	Button.BackgroundColor3 = Color3.new(1, 1, 1)
+	Button.Position = Position
+	Button.Size = Size or UDim2.new(0.19, 0, 0.649, 0)
+	Button.Text = ""
+	Button.AutoButtonColor = false
+	Button.ZIndex = 1
+
+	AddCorner(Button)
+
+	local Gradient = Instance.new("UIGradient")
+	Gradient.Name = "Gradient"
+	Gradient.Parent = Button
+	Gradient.Color = gradients[ColorName] or gradients.White
+	Gradient.Rotation = gradientsRotation
+
+	local Shadow = Instance.new("Frame")
+	Shadow.Name = "ColorShadow"
+	Shadow.Parent = Button
+	Shadow.AnchorPoint = Vector2.new(0.5, 0.5)
+	Shadow.BackgroundColor3 = Color3.fromRGB(178, 178, 178)
+	Shadow.Position = UDim2.new(0.5, 0, 0.5, 0)
+	Shadow.Size = UDim2.new(0.965, 0, 0.85, 0)
+	Shadow.ZIndex = 2
+
+	AddCorner(Shadow)
+
+	local ShadowGradient = Instance.new("UIGradient")
+	ShadowGradient.Name = "Gradient"
+	ShadowGradient.Parent = Shadow
+	ShadowGradient.Color = gradients[ColorName] or gradients.White
+	ShadowGradient.Rotation = gradientsRotation
+	ShadowGradient.Transparency = gradientTransparency
+
+	local TextLabel = Instance.new("TextLabel")
+	TextLabel.Name = "Label"
+	TextLabel.Parent = Shadow
+	TextLabel.AnchorPoint = Vector2.new(0.5, 0.5)
+	TextLabel.BackgroundTransparency = 1
+	TextLabel.Position = UDim2.new(0.5, 0, 0.5, 0)
+	TextLabel.Size = UDim2.new(1, 0, 0.57, 0)
+	TextLabel.ZIndex = 3
+	TextLabel.Font = Enum.Font.FredokaOne
+	TextLabel.Text = Text
+	TextLabel.TextColor3 = Color3.new(1, 1, 1)
+	TextLabel.TextScaled = true
+	TextLabel.TextWrapped = true
+
+	AddTextStroke(TextLabel)
+
+	return Button, TextLabel
+end
+
+-- // Create Container Item
+
+local function CreateContainerItem(
+	ItemName,
+	ItemDesc,
+	HasSelection,
+	SelectText,
+	OnToggleChanged,
+	OnSelectClicked
+)
+	HasSelection = HasSelection or false
+	SelectText = SelectText or "Select"
+
+	local ContainerItem = Instance.new("Frame")
+	ContainerItem.Name = ItemName
+	ContainerItem.Parent = MainContainer
+	ContainerItem.BackgroundColor3 = Color3.new(0, 0, 0)
+	ContainerItem.BackgroundTransparency = 0.5
+	ContainerItem.Size = UDim2.new(0.956, 0, 0.174, 0)
+
+	AddCorner(ContainerItem, UDim.new(0.1, 0))
+
+	local InnerStroke = AddStroke(
+		ContainerItem,
+		Color3.new(1, 1, 1),
+		0.04,
+		0.88
+	)
+	InnerStroke.StrokeSizingMode = Enum.StrokeSizingMode.ScaledSize
+
+	local OuterStroke = AddStroke(
+		ContainerItem,
+		Color3.new(0, 0, 0),
+		0.04
+	)
+	OuterStroke.StrokeSizingMode = Enum.StrokeSizingMode.ScaledSize
+
+	-- // Name
+
+	local NameLabel = Instance.new("TextLabel")
+	NameLabel.Name = "Name"
+	NameLabel.Parent = ContainerItem
+	NameLabel.AnchorPoint = Vector2.new(0, 0.5)
+	NameLabel.BackgroundTransparency = 1
+	NameLabel.Position = UDim2.new(0.015, 0, 0.321, 0)
+	NameLabel.Size = UDim2.new(0.394, 0, 0.401, 0)
+	NameLabel.ZIndex = 2
+	NameLabel.Font = Enum.Font.FredokaOne
+	NameLabel.Text = ItemName
+	NameLabel.TextColor3 = Color3.new(1, 1, 1)
+	NameLabel.TextScaled = true
+	NameLabel.TextWrapped = true
+	NameLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+	AddTextStroke(NameLabel)
+
+	-- // Description
+
+	local Desc = Instance.new("TextLabel")
+	Desc.Name = "Desc"
+	Desc.Parent = ContainerItem
+	Desc.AnchorPoint = Vector2.new(0, 0.5)
+	Desc.BackgroundTransparency = 1
+	Desc.Position = UDim2.new(0.015, 0, 0.7, 0)
+	Desc.Size = UDim2.new(0.54, 0, 0.3, 0)
+	Desc.ZIndex = 2
+	Desc.Font = Enum.Font.FredokaOne
+	Desc.Text = ItemDesc
+	Desc.TextColor3 = Color3.new(1, 1, 1)
+	Desc.TextScaled = true
+	Desc.TextTransparency = 0.5
+	Desc.TextWrapped = true
+	Desc.TextXAlignment = Enum.TextXAlignment.Left
+
+	AddTextStroke(Desc)
+
+	-- // Toggle Button
+
+	local ToggleButton, ToggleLabel = CreateButton(
+		ContainerItem,
+		"Toggle",
+		"OFF",
+		HasSelection
+			and UDim2.new(0.765, 0, 0.5, 0)
+			or UDim2.new(0.985, 0, 0.5, 0),
+		"Red"
+	)
+
+	-- // Selection Button
+
+	local SelectButton
+
+	if HasSelection then
+		SelectButton = CreateButton(
+			ContainerItem,
+			"Select",
+			SelectText,
+			UDim2.new(0.985, 0, 0.5, 0),
+			"Blue"
+		)
+	end
+
+	-- // Toggle Logic
+
+	local Enabled = false
+
+	local function SetEnabled(Value, FireCallback)
+		Enabled = Value == true
+
+		local ColorName = Enabled and "Green" or "Red"
+		ToggleLabel.Text = Enabled and "ON" or "OFF"
+
+		ToggleButton.Gradient.Color = gradients[ColorName]
+		ToggleButton.ColorShadow.Gradient.Color = gradients[ColorName]
+
+		if FireCallback and OnToggleChanged then
+			OnToggleChanged(Enabled)
+		end
+	end
+
+	ToggleButton.Activated:Connect(function()
+		SetEnabled(not Enabled, true)
+	end)
+
+	-- // Select Logic
+
+	if SelectButton then
+		SelectButton.Activated:Connect(function()
+			if OnSelectClicked then
+				OnSelectClicked()
+			end
+		end)
+	end
+
+	-- // Return References
+
+	return {
+		Container = ContainerItem,
+		ToggleButton = ToggleButton,
+		ToggleLabel = ToggleLabel,
+		SelectButton = SelectButton,
+
+		IsEnabled = function()
+			return Enabled
+		end,
+
+		SetEnabled = function(Value)
+			SetEnabled(Value, false)
+		end,
+
+		SetSelectText = function(Text)
+			if SelectButton then
+				SelectButton.ColorShadow.Label.Text = Text
+			end
+		end,
+
+		SetDescription = function(Text)
+			Desc.Text = Text
+		end,
+
+		SetName = function(Text)
+			NameLabel.Text = Text
+			ContainerItem.Name = Text
+		end,
+
+		Destroy = function()
+			ContainerItem:Destroy()
+		end
+	}
+end
+
+-- // Create Select Button
+
+local function CreateSelectButton(Name, ColorName, OnSelectionChanged)
+	ColorName = gradients[ColorName] and ColorName or "Blue"
+
+	local Button = Instance.new("TextButton")
+	Button.Name = Name
+	Button.Size = UDim2.new(0.25, 0, 0.9, 0)
+	Button.Text = ""
+	Button.AutoButtonColor = false
+	Button.BackgroundColor3 = Color3.new(1, 1, 1)
+	Button.Parent = SelectScroll
+
+	AddCorner(Button)
+
+	local ButtonGradient = Instance.new("UIGradient")
+	ButtonGradient.Name = "Gradient"
+	ButtonGradient.Parent = Button
+	ButtonGradient.Color = gradients.White
+	ButtonGradient.Rotation = gradientsRotation
+
+	local Shadow = Instance.new("Frame")
+	Shadow.Name = "ColorShadow"
+	Shadow.Parent = Button
+	Shadow.AnchorPoint = Vector2.new(0.5, 0.5)
+	Shadow.BackgroundColor3 = Color3.fromRGB(178, 178, 178)
+	Shadow.Position = UDim2.new(0.5, 0, 0.5, 0)
+	Shadow.Size = UDim2.new(0.976, 0, 0.85, 0)
+	Shadow.ZIndex = 2
+
+	AddCorner(Shadow)
+
+	local ShadowGradient = Instance.new("UIGradient")
+	ShadowGradient.Name = "Gradient"
+	ShadowGradient.Parent = Shadow
+	ShadowGradient.Color = gradients.White
+	ShadowGradient.Rotation = gradientsRotation
+	ShadowGradient.Transparency = gradientTransparency
+
+	-- // Label
+
+	local TextLabel = Instance.new("TextLabel")
+	TextLabel.Name = "Label"
+	TextLabel.Parent = Shadow
+	TextLabel.AnchorPoint = Vector2.new(0.5, 0.5)
+	TextLabel.BackgroundTransparency = 1
+	TextLabel.Position = UDim2.new(0.5, 0, 0.5, 0)
+	TextLabel.Size = UDim2.new(1, 0, 0.57, 0)
+	TextLabel.ZIndex = 3
+	TextLabel.Font = Enum.Font.FredokaOne
+	TextLabel.Text = Name
+	TextLabel.TextColor3 = Color3.new(1, 1, 1)
+	TextLabel.TextScaled = true
+	TextLabel.TextWrapped = true
+
+	AddTextStroke(TextLabel)
+
+	-- // Selected Icon
+
+	local Selected = Instance.new("ImageLabel")
+	Selected.Name = "Selected"
+	Selected.Parent = Shadow
+	Selected.BackgroundTransparency = 1
+	Selected.AnchorPoint = Vector2.new(0.5, 0.5)
+	Selected.Position = UDim2.new(0.9, 0, 0.5, 0)
+	Selected.Size = UDim2.new(0.155, 0, 0.685, 0)
+	Selected.Image = "rbxassetid://15540208282"
+	Selected.ScaleType = Enum.ScaleType.Fit
+	Selected.Visible = false
+	Selected.ZIndex = 4
+
+	-- // Selection Logic
+
+	local IsSelected = false
+
+	local function SetSelected(Value, FireCallback)
+		IsSelected = Value == true
+
+		local SelectedColor = IsSelected and ColorName or "White"
+
+		ButtonGradient.Color = gradients[SelectedColor]
+		ShadowGradient.Color = gradients[SelectedColor]
+		Selected.Visible = IsSelected
+
+		if FireCallback and OnSelectionChanged then
+			OnSelectionChanged(IsSelected)
+		end
+	end
+
+	Button.Activated:Connect(function()
+		SetSelected(not IsSelected, true)
+	end)
+
+	return {
+		Button = Button,
+		Selected = Selected,
+
+		IsSelected = function()
+			return IsSelected
+		end,
+
+		SetSelected = function(Value)
+			SetSelected(Value, false)
+		end,
+
+		SetName = function(Text)
+			TextLabel.Text = Text
+			Button.Name = Text
+		end,
+
+		Destroy = function()
+			Button:Destroy()
+		end
+	}
+end
+
+-- // Public API
+
+local UI = {}
+
+function UI:CreateContainerItem(
+	ItemName,
+	ItemDesc,
+	HasSelection,
+	SelectText,
+	OnToggleChanged,
+	OnSelectClicked
+)
+	return CreateContainerItem(
+		ItemName,
+		ItemDesc,
+		HasSelection,
+		SelectText,
+		OnToggleChanged,
+		OnSelectClicked
+	)
+end
+
+function UI:CreateSelectButton(Name, ColorName, OnSelectionChanged)
+	return CreateSelectButton(Name, ColorName, OnSelectionChanged)
+end
+
+function UI:SetTitle(Text)
+	Title.Text = Text
+end
+
+function UI:SetSubtitle(Text)
+	Subtitle.Text = Text
+end
+
+function UI:SetVisible(Value)
+	ScreenGui.Enabled = Value == true
+end
+
+function UI:ToggleVisible()
+	ScreenGui.Enabled = not ScreenGui.Enabled
+end
+
+function UI:ShowSelectionBar(Value)
+	SelectScroll.Visible = Value == true
+end
+
+function UI:Destroy()
+	ScreenGui:Destroy()
+end
+
+-- // Public References
+
+UI.ScreenGui = ScreenGui
+UI.MainFrame = MainFrame
+UI.MainContainer = MainContainer
+UI.SelectScroll = SelectScroll
+
+-- // Keyboard Shortcut
+
+local InputConnection
+
+InputConnection = UserInputService.InputBegan:Connect(function(
+	Input,
+	GameProcessedEvent
+)
+	if GameProcessedEvent then
+		return
+	end
+
+	if Input.KeyCode == Enum.KeyCode.LeftControl
+		or Input.KeyCode == Enum.KeyCode.RightControl then
+		ScreenGui.Enabled = not ScreenGui.Enabled
+	end
+end)
+
+ScreenGui.Destroying:Connect(function()
+	if InputConnection then
+		InputConnection:Disconnect()
+	end
+end)
+
+-- // Return Library
+
+return UI
