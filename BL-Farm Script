@@ -58,7 +58,7 @@ local AutoFarms = {
 		Active = false;
 		Priority = 1;
 		
-		TP_CD = 1.8;
+		TP_CD = 1.5;
 	};
 	["Obby"] = {
 		Name = "Auto Obby";
@@ -84,7 +84,7 @@ local AutoFarms = {
 		Active = false;
 		Priority = 4;
 		
-		TP_CD = 1.8
+		TP_CD = 1.5
 	};
 }
 
@@ -379,6 +379,7 @@ local nextNightCheck = 0
 local NIGHT_CHECK_INTERVAL = 120 -- 2 minutos
 local DAY_CHECK_INTERVAL = 300 -- 5 minutos
 
+
 local function AutoObby()
 	local Obby = AutoFarms.Obby
 	if not Obby.Active then
@@ -396,18 +397,11 @@ local function AutoObby()
 					local VictoryPart = ObbyParts[Difficulty .. "Obby"]
 
 					print("[BL: Farm] Teleport realizado | Dificuldade:", Difficulty)
-					
+
 					task.wait(1)
-					
-					for i = 1, 5 do
-						print("[BL: Farm] ClaimObbyBonus | Chamada:", i, "/5")
 
-						ClaimObbyBonus:FireServer(VictoryPart)
-
-						if i < 5 then
-							task.wait(0.2)
-						end
-					end
+					print("[BL: Farm] ClaimObbyBonus | Dificuldade:", Difficulty)
+					ClaimObbyBonus:FireServer(VictoryPart)
 
 					Obby.DifficultyCD[Difficulty] = os.time() + Config.CD
 
@@ -435,17 +429,10 @@ local function AutoItems()
 	if Teleport(Config[1]) then
 		print("[BL: Farm] Teleport realizado | Item:", itemIndex)
 
-		task.wait(1)
+		task.wait(0.5)
 
-		for i = 1, 5 do
-			print("[BL: Farm] CollectCollectableObject | Chamada:", i, "/5")
-
-			ItemCollect:FireServer(ItemsPart)
-
-			if i < 5 then
-				task.wait(0.2)
-			end
-		end
+		print("[BL: Farm] CollectCollectableObject | Item:", itemIndex)
+		ItemCollect:FireServer(ItemsPart)
 
 		itemIndex = (itemIndex % #Positions.Items) + 1
 
@@ -470,17 +457,10 @@ local function AutoVariants()
 	if Teleport(Config[1]) then
 		print("[BL: Farm] Teleport realizado | Variante:", variantIndex)
 
-		task.wait(1)
+		task.wait(0.5)
 
-		for i = 1, 5 do
-			print("[BL: Farm] CollectVariantTokenSpawn | Chamada:", i, "/5")
-
-			VariantCollect:FireServer(VariantPart)
-
-			if i < 5 then
-				task.wait(0.2)
-			end
-		end
+		print("[BL: Farm] CollectVariantTokenSpawn | Variante:", variantIndex)
+		VariantCollect:FireServer(VariantPart)
 
 		variantIndex = (variantIndex % #Positions.Variants) + 1
 
@@ -489,6 +469,7 @@ local function AutoVariants()
 
 	return false
 end
+
 
 local function AutoHalloween()
 	local Halloween = AutoFarms.Halloween
