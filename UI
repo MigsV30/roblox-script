@@ -1,1 +1,575 @@
+-- // Services
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
 
+local Player = Players.LocalPlayer
+local UserId = Player.UserId
+local PlayerGui = Player:WaitForChild("PlayerGui")
+
+-- // Prevent Duplicates
+local ExistingUI = PlayerGui:FindFirstChild("HUB")
+if ExistingUI then
+	ExistingUI:Destroy()
+end
+
+-- // Helpers
+local function AddCorner(Parent, Radius)
+	local Corner = Instance.new("UICorner")
+	Corner.CornerRadius = Radius or UDim.new(0.1, 0)
+	Corner.Parent = Parent
+
+	return Corner
+end
+
+local function AddStroke(Parent, Color, Thickness, Transparency)
+	local Stroke = Instance.new("UIStroke")
+	Stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	Stroke.Color = Color or Color3.fromRGB(0, 0, 0)
+	Stroke.Thickness = Thickness or 0.04
+	Stroke.Transparency = Transparency or 0
+	Stroke.Parent = Parent
+	Stroke.StrokeSizingMode = Enum.StrokeSizingMode.ScaledSize
+
+	return Stroke
+end
+
+local function AddTextStroke(Parent, Thickness)
+	local Stroke = Instance.new("UIStroke")
+	Stroke.Color = Color3.fromRGB(0, 0, 0)
+	Stroke.Thickness = Thickness or 0.06
+	Stroke.Parent = Parent
+	Stroke.StrokeSizingMode = Enum.StrokeSizingMode.ScaledSize
+
+	return Stroke
+end
+
+local colors = {
+	Red = Color3.fromRGB(255, 0, 0);
+	Green = Color3.fromRGB(0, 255, 0);
+	Blue = Color3.fromRGB(0, 136, 255);
+	Yellow = Color3.fromRGB(255, 200, 0);
+	Orange = Color3.fromRGB(255, 119, 0);
+	Purple = Color3.fromRGB(139, 56, 255);
+}
+
+-- // ScreenGui
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "HUB"
+ScreenGui.IgnoreGuiInset = true
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = PlayerGui
+
+-- // Main Frame
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = ScreenGui
+MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+MainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+MainFrame.BackgroundTransparency = 0.5
+MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+MainFrame.Size = UDim2.new(0.4, 0, 0.55, 0)
+
+-- // Floating reopen button (shown while the hub is hidden)
+local ReopenButton = Instance.new("ImageButton")
+ReopenButton.Name = "ReopenButton"
+ReopenButton.Parent = ScreenGui
+ReopenButton.AnchorPoint = Vector2.new(0.5, 0.5)
+ReopenButton.BackgroundTransparency = 1
+ReopenButton.BorderSizePixel = 0
+ReopenButton.Position = UDim2.new(0, 80, 0.5, 0)
+ReopenButton.Size = UDim2.fromOffset(56, 56)
+ReopenButton.Image = "rbxassetid://95184906346981"
+ReopenButton.ScaleType = Enum.ScaleType.Fit
+ReopenButton.Visible = false
+ReopenButton.Active = true
+ReopenButton.ZIndex = 100
+
+-- Make the floating button draggable with mouse or touch.
+local Dragging = false
+local DragInput = nil
+local DragStart = nil
+local StartPosition = nil
+
+ReopenButton.InputBegan:Connect(function(Input)
+	if Input.UserInputType == Enum.UserInputType.MouseButton1
+		or Input.UserInputType == Enum.UserInputType.Touch then
+		Dragging = true
+		DragStart = Input.Position
+		StartPosition = ReopenButton.Position
+		DragInput = Input
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(Input)
+	if Dragging and (Input.UserInputType == Enum.UserInputType.MouseMovement
+		or Input.UserInputType == Enum.UserInputType.Touch) then
+		local Delta = Input.Position - DragStart
+		ReopenButton.Position = UDim2.new(
+			StartPosition.X.Scale, StartPosition.X.Offset + Delta.X,
+			StartPosition.Y.Scale, StartPosition.Y.Offset + Delta.Y
+		)
+	end
+end)
+
+UserInputService.InputEnded:Connect(function(Input)
+	if Input == DragInput or Input.UserInputType == Enum.UserInputType.MouseButton1
+		or Input.UserInputType == Enum.UserInputType.Touch then
+		Dragging = false
+		DragInput = nil
+	end
+end)
+
+local Line = Instance.new("Frame")
+Line.Name = "LineR"
+Line.Parent = MainFrame
+Line.AnchorPoint = Vector2.new(1, 0.5)
+Line.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+Line.BorderSizePixel = 0
+Line.Position = UDim2.new(1, 0, 0.5, 0)
+Line.Size = UDim2.new(0.003, 0, 0.755, 0)
+
+AddCorner(MainFrame, UDim.new(0.03, 0))
+local MainStroke = AddStroke(MainFrame, Color3.fromRGB(0, 0, 0), 0.007, 0.7)
+
+-- // Top Frame
+local TopFrame = Instance.new("Frame")
+TopFrame.Name = "Top"
+TopFrame.Parent = MainFrame
+TopFrame.AnchorPoint = Vector2.new(0.5, 0)
+TopFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+TopFrame.BackgroundTransparency = 0.4
+TopFrame.Position = UDim2.new(0.5, 0, 0.005, 0)
+TopFrame.Size = UDim2.new(0.998, 0, 0.115, 0)
+
+AddCorner(TopFrame, UDim.new(0.225, 0))
+local TopCorner = TopFrame:FindFirstChildOfClass("UICorner")
+TopCorner.BottomLeftRadius = UDim.new(0, 0)
+TopCorner.BottomRightRadius = UDim.new(0, 0)
+
+local TopStroke = AddStroke(TopFrame, Color3.fromRGB(0, 0, 0), 0.03)
+
+-- // Title | Subtitle
+local Title = Instance.new("TextLabel")
+Title.Name = "Title"
+Title.Parent = TopFrame
+Title.AnchorPoint = Vector2.new(0.5, 0.5)
+Title.BackgroundTransparency = 1
+Title.Position = UDim2.new(0.21, 0, 0.341, 0)
+Title.Size = UDim2.new(0.371, 0, 0.436, 0)
+Title.ZIndex = 2
+Title.Font = Enum.Font.BuilderSansBold
+Title.Text = "Blue Lock Farm — Script"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextScaled = true
+Title.TextWrapped = true
+Title.TextXAlignment = Enum.TextXAlignment.Left
+
+AddTextStroke(Title)
+
+local Subtitle = Instance.new("TextLabel")
+Subtitle.Name = "Subtitle"
+Subtitle.Parent = TopFrame
+Subtitle.AnchorPoint = Vector2.new(0.5, 0.5)
+Subtitle.BackgroundTransparency = 1
+Subtitle.Position = UDim2.new(0.21, 0, 0.699, 0)
+Subtitle.Size = UDim2.new(0.371, 0, 0.316, 0)
+Subtitle.ZIndex = 2
+Subtitle.Font = Enum.Font.BuilderSans
+Subtitle.Text = "GrindX HUB"
+Subtitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+Subtitle.TextScaled = true
+Subtitle.TextTransparency = 0.3
+Subtitle.TextWrapped = true
+Subtitle.TextXAlignment = Enum.TextXAlignment.Left
+
+AddTextStroke(Subtitle)
+
+-- // Bottom Frame
+local BottomFrame = Instance.new("Frame")
+BottomFrame.Name = "Bottom"
+BottomFrame.Parent = MainFrame
+BottomFrame.AnchorPoint = Vector2.new(0.5, 1)
+BottomFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+BottomFrame.BackgroundTransparency = 0.4
+BottomFrame.Position = UDim2.new(0.5, 0, 0.995, 0)
+BottomFrame.Size = UDim2.new(0.998, 0, 0.115, 0)
+
+AddCorner(BottomFrame, UDim.new(0.225, 0))
+local BottomCorner = BottomFrame:FindFirstChildOfClass("UICorner")
+BottomCorner.TopLeftRadius = UDim.new(0, 0)
+BottomCorner.TopRightRadius = UDim.new(0, 0)
+
+local BottomStroke = AddStroke(BottomFrame, Color3.fromRGB(0, 0, 0), 0.03)
+
+-- // Bottom Info
+local PlayerIcon = Instance.new("ImageLabel")
+PlayerIcon.Name = "PlayerIcon"
+PlayerIcon.Parent = BottomFrame
+PlayerIcon.AnchorPoint = Vector2.new(0, 0.5)
+PlayerIcon.BackgroundTransparency = 1
+PlayerIcon.Position = UDim2.new(0.015, 0, 0.5, 0)
+PlayerIcon.Size = UDim2.new(0.064, 0, 0.761, 0)
+PlayerIcon.Image = Players:GetUserThumbnailAsync(UserId, Enum.ThumbnailType.AvatarBust, Enum.ThumbnailSize.Size60x60)
+
+AddCorner(PlayerIcon, UDim.new(1, 0))
+
+local PlayerName = Instance.new("TextLabel")
+PlayerName.Name = "Title"
+PlayerName.Parent = BottomFrame
+PlayerName.AnchorPoint = Vector2.new(0, 0.5)
+PlayerName.BackgroundTransparency = 1
+PlayerName.Position = UDim2.new(0.09, 0, 0.5, 0)
+PlayerName.Size = UDim2.new(0.256, 0, 0.436, 0)
+PlayerName.ZIndex = 2
+PlayerName.Font = Enum.Font.BuilderSansBold
+PlayerName.Text = Player.Name
+PlayerName.TextColor3 = Color3.fromRGB(255, 255, 255)
+PlayerName.TextScaled = true
+PlayerName.TextWrapped = true
+PlayerName.TextXAlignment = Enum.TextXAlignment.Left
+
+AddTextStroke(PlayerName)
+
+-- // Categories Container
+local CategoriesFrame = Instance.new("Frame")
+CategoriesFrame.Name = "Categories"
+CategoriesFrame.Parent = MainFrame
+CategoriesFrame.AnchorPoint = Vector2.new(0, 0.5)
+CategoriesFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+CategoriesFrame.BackgroundTransparency = 0.4
+CategoriesFrame.BorderSizePixel = 0
+CategoriesFrame.Position = UDim2.new(0, 0, 0.5, 0)
+CategoriesFrame.Size = UDim2.new(0.347, 0, 0.755, 0)
+
+local Line2 = Instance.new("Frame")
+Line2.Name = "LineL"
+Line2.Parent = CategoriesFrame
+Line2.AnchorPoint = Vector2.new(0, 0.5)
+Line2.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+Line2.BorderSizePixel = 0
+Line2.Position = UDim2.new(0, 0, 0.5, 0)
+Line2.Size = UDim2.new(0.012, 0, 1, 0)
+
+local Line3 = Instance.new("Frame")
+Line3.Name = "LineR"
+Line3.Parent = CategoriesFrame
+Line3.AnchorPoint = Vector2.new(1, 0.5)
+Line3.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+Line3.BorderSizePixel = 0
+Line3.Position = UDim2.new(1, 0, 0.5, 0)
+Line3.Size = UDim2.new(0.012, 0, 1, 0)
+
+local Container = Instance.new("ScrollingFrame")
+Container.Name = "Container"
+Container.Parent = CategoriesFrame
+Container.AnchorPoint = Vector2.new(0.5, 0.5)
+Container.BackgroundTransparency = 1
+Container.Position = UDim2.new(0.5, 0, 0.508, 0)
+Container.Size = UDim2.new(0.965, 0, 0.955, 0)
+Container.AutomaticCanvasSize = Enum.AutomaticSize.Y
+Container.CanvasSize = UDim2.new(0, 0, 0, 0)
+Container.ScrollBarThickness = 0
+
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Parent = Container
+UIListLayout.Padding = UDim.new(0.03, 0)
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+UIListLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+
+local Space = Instance.new("Frame")
+Space.Name = "Space"
+Space.Parent = Container
+Space.BackgroundTransparency = 1
+Space.BorderSizePixel = 0
+Space.LayoutOrder = 999999999
+Space.Size = UDim2.new(0.965, 0, 0.033, 0)
+
+-- // Main Container
+local MainContainer = Instance.new("ScrollingFrame")
+MainContainer.Name = "MainContainer"
+MainContainer.Parent = MainFrame
+MainContainer.AnchorPoint = Vector2.new(0, 0.5)
+MainContainer.BackgroundTransparency = 1
+MainContainer.BorderSizePixel = 0
+MainContainer.Position = UDim2.new(0.36, 0, 0.5, 0)
+MainContainer.Size = UDim2.new(0.622, 0, 0.704, 0)
+MainContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y
+MainContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
+MainContainer.ScrollBarThickness = 4
+
+local UIListLayout2 = Instance.new("UIListLayout")
+UIListLayout2.Parent = MainContainer
+UIListLayout2.Padding = UDim.new(0.05, 0)
+UIListLayout2.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout2.HorizontalAlignment = Enum.HorizontalAlignment.Left
+UIListLayout2.VerticalAlignment = Enum.VerticalAlignment.Top
+
+local UIPadding = Instance.new("UIPadding")
+UIPadding.Parent = MainContainer
+UIPadding.PaddingTop = UDim.new(0, 6)
+
+local Space2 = Instance.new("Frame")
+Space2.Name = "Space"
+Space2.Parent = MainContainer
+Space2.BackgroundTransparency = 1
+Space2.BorderSizePixel = 0
+Space2.LayoutOrder = 999999999
+Space2.Size = UDim2.new(0.985, 0, 0.134, 0)
+
+-- // Create Category Buttons
+local function CreateCategoryButton(Name: string, Text: string, LayoutOrder: number)
+	local Button = Instance.new("TextButton")
+	Button.Name = Name
+	Button.Parent = Container
+	Button.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	Button.BackgroundTransparency = 1
+	Button.BorderSizePixel = 0
+	Button.LayoutOrder = LayoutOrder
+	Button.Text = ""
+	Button.Size = UDim2.new(0.95, 0, 0, 42)
+	Button.AutoButtonColor = true
+
+	local TextLabel = Instance.new("TextLabel")
+	TextLabel.Name = "Label"
+	TextLabel.Parent = Button
+	TextLabel.AnchorPoint = Vector2.new(0.5, 0.5)
+	TextLabel.BackgroundTransparency = 1
+	TextLabel.Position = UDim2.new(0.5, 0, 0.5, 0)
+	TextLabel.Size = UDim2.new(1, 0, 0.635, 0)
+	TextLabel.ZIndex = 2
+	TextLabel.Font = Enum.Font.BuilderSansBold
+	TextLabel.Text = Text
+	TextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	TextLabel.TextScaled = true
+	TextLabel.TextWrapped = true
+	TextLabel.TextXAlignment = Enum.TextXAlignment.Center
+	TextLabel.TextYAlignment = Enum.TextYAlignment.Center
+	AddTextStroke(TextLabel, 0.08)
+
+	return Button, TextLabel
+end
+
+-- // Library Data
+local UI = {}
+local Categories = {}
+local SelectedCategory = nil
+local CategoryOrder = 0
+local ItemOrder = 0
+
+-- // Select Category
+local function SelectCategory(CategoryData)
+	SelectedCategory = CategoryData
+
+	for _, Data in pairs(Categories) do
+		Data.Button.BackgroundTransparency = (Data == CategoryData) and 0.8 or 1
+	end
+
+	for _, ItemData in ipairs(CategoryData.Items) do
+		ItemData.Frame.Visible = true
+	end
+
+	for _, Data in pairs(Categories) do
+		if Data ~= CategoryData then
+			for _, ItemData in ipairs(Data.Items) do
+				ItemData.Frame.Visible = false
+			end
+		end
+	end
+end
+
+-- // Create Category
+function UI:CreateCategory(Name: string, Text: string?)
+	assert(type(Name) == "string" and Name ~= "", "Category name must be a non-empty string")
+	assert(not Categories[Name], "A category with this name already exists")
+
+	CategoryOrder += 1
+	local Button, Label = CreateCategoryButton(Name, Text or Name, CategoryOrder)
+	Button.BackgroundTransparency = 1
+
+	local CategoryData = {
+		Name = Name,
+		Button = Button,
+		Label = Label,
+		Items = {},
+	}
+
+	Categories[Name] = CategoryData
+	Button.Activated:Connect(function()
+		SelectCategory(CategoryData)
+	end)
+
+	if not SelectedCategory then
+		SelectCategory(CategoryData)
+	end
+
+	return CategoryData
+end
+
+-- // Create Main Container Item
+local function CreateMainContainerItem(Name: string, Text: string, LayoutOrder: number, DefaultState: boolean, Callback)
+	local Frame = Instance.new("Frame")
+	Frame.Name = Name
+	Frame.Parent = MainContainer
+	Frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	Frame.BackgroundTransparency = 0.4
+	Frame.BorderSizePixel = 0
+	Frame.Size = UDim2.new(0.955, 0, 0, 58)
+	Frame.LayoutOrder = LayoutOrder
+	Frame.Visible = false
+
+	AddCorner(Frame, UDim.new(0.1, 0))
+	AddStroke(Frame, Color3.fromRGB(0, 0, 0), 0.035, 0.7)
+
+	local Title = Instance.new("TextLabel")
+	Title.Name = "Title"
+	Title.Parent = Frame
+	Title.AnchorPoint = Vector2.new(0, 0.5)
+	Title.BackgroundTransparency = 1
+	Title.Position = UDim2.new(0.04, 0, 0.5, 0)
+	Title.Size = UDim2.new(0.65, 0, 0.65, 0)
+	Title.ZIndex = 2
+	Title.Font = Enum.Font.BuilderSansBold
+	Title.Text = Text
+	Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+	Title.TextScaled = true
+	Title.TextWrapped = true
+	Title.TextXAlignment = Enum.TextXAlignment.Left
+	Title.TextYAlignment = Enum.TextYAlignment.Center
+	AddTextStroke(Title, 0.08)
+
+	-- Image toggle button (uses the image asset from the original library).
+	local Button = Instance.new("ImageButton")
+	Button.Name = "Toggle"
+	Button.Parent = Frame
+	Button.AnchorPoint = Vector2.new(1, 0.5)
+	Button.Position = UDim2.new(0.96, 0, 0.5, 0)
+	Button.Size = UDim2.new(0.22, 0, 0.58, 0)
+	Button.BackgroundTransparency = 1
+	Button.BorderSizePixel = 0
+	Button.AutoButtonColor = true
+	Button.Image = "rbxassetid://115244835457218"
+	Button.ImageColor3 = Color3.fromRGB(255, 255, 255)
+	Button.ScaleType = Enum.ScaleType.Slice
+	Button.SliceCenter = Rect.new(50, 50, 50, 50)
+
+	local ToggleText = Instance.new("TextLabel")
+	ToggleText.Name = "StateLabel"
+	ToggleText.Parent = Button
+	ToggleText.AnchorPoint = Vector2.new(0.5, 0.5)
+	ToggleText.BackgroundTransparency = 1
+	ToggleText.Position = UDim2.new(0.5, 0, 0.5, 0)
+	ToggleText.Size = UDim2.new(0.5, 0, 0.6, 0)
+	ToggleText.ZIndex = 2
+	ToggleText.Font = Enum.Font.BuilderSansBold
+	ToggleText.Text = DefaultState and "ON" or "OFF"
+	ToggleText.TextColor3 = Color3.fromRGB(255, 255, 255)
+	ToggleText.TextScaled = true
+	ToggleText.TextWrapped = true
+	ToggleText.TextXAlignment = Enum.TextXAlignment.Center
+	ToggleText.TextYAlignment = Enum.TextYAlignment.Center
+	AddTextStroke(ToggleText, 0.08)
+
+	local State = DefaultState
+	local function SetState(NewState)
+		State = NewState == true
+		ToggleText.Text = State and "ON" or "OFF"
+
+		if Callback then
+			task.spawn(function()
+				local Success, ErrorMessage = pcall(Callback, State)
+				if not Success then
+					warn("[HUB] Item callback error:", ErrorMessage)
+				end
+			end)
+		end
+	end
+
+	Button.Activated:Connect(function()
+		SetState(not State)
+	end)
+
+	return {
+		Frame = Frame,
+		Button = Button,
+		Title = Title,
+		GetState = function()
+			return State
+		end,
+		SetState = SetState,
+	}
+end
+
+-- // Public API: Create Item
+function UI:CreateItem(CategoryName: string, Name: string, Text: string, Callback, DefaultState: boolean?)
+	assert(Categories[CategoryName], "Category does not exist: " .. tostring(CategoryName))
+	assert(type(Name) == "string" and Name ~= "", "Item name must be a non-empty string")
+	assert(type(Text) == "string", "Item text must be a string")
+	assert(Callback == nil or type(Callback) == "function", "Callback must be a function or nil")
+
+	local CategoryData = Categories[CategoryName]
+	assert(not CategoryData.ItemNames or not CategoryData.ItemNames[Name], "An item with this name already exists in this category")
+
+	CategoryData.ItemNames = CategoryData.ItemNames or {}
+	CategoryData.ItemNames[Name] = true
+
+	ItemOrder += 1
+	local ItemData = CreateMainContainerItem(Name, Text, ItemOrder, DefaultState == true, Callback)
+	ItemData.Frame.Parent = MainContainer
+	table.insert(CategoryData.Items, ItemData)
+
+	-- Items are only visible while their category is selected.
+	ItemData.Frame.Visible = SelectedCategory == CategoryData
+
+	return ItemData
+end
+
+-- // Public API: Toggle / Visibility / Cleanup
+function UI:SetEnabled(Enabled: boolean)
+	local IsEnabled = Enabled == true
+	MainFrame.Visible = IsEnabled
+	ReopenButton.Visible = not IsEnabled
+end
+
+function UI:Hide()
+	self:SetEnabled(false)
+end
+
+function UI:Show()
+	self:SetEnabled(true)
+end
+
+function UI:Destroy()
+	ScreenGui:Destroy()
+	table.clear(Categories)
+	SelectedCategory = nil
+end
+
+-- Clicking the floating image restores the hub.
+ReopenButton.Activated:Connect(function()
+	UI:Show()
+end)
+
+-- // Keyboard Shortcut
+local InputConnection
+
+InputConnection = UserInputService.InputBegan:Connect(function(Input, GameProcessedEvent)
+	if GameProcessedEvent then
+		return
+	end
+
+	if Input.KeyCode == Enum.KeyCode.LeftControl
+		or Input.KeyCode == Enum.KeyCode.RightControl then
+		UI:SetEnabled(not MainFrame.Visible)
+	end
+end)
+
+ScreenGui.Destroying:Connect(function()
+	if InputConnection then
+		InputConnection:Disconnect()
+	end
+end)
+
+-- // Return Library
+return UI
