@@ -2,11 +2,24 @@
 -- // Services
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local HttpService = game:GetService("HttpService")
 
 local Player = Players.LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
 
 -- // Library
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/MigsV30/roblox-script/refs/heads/AnimeDice/UI"))()
+local LibraryURL = "https://raw.githubusercontent.com/MigsV30/roblox-script/refs/heads/AnimeDice/UI"
+
+local Source = HttpService:GetAsync(LibraryURL)
+local Library = loadstring(Source)()
+
+-- // UI Title
+local ScreenGui = PlayerGui:WaitForChild("HUB")
+local MainFrame = ScreenGui:WaitForChild("MainFrame")
+local TopFrame = MainFrame:WaitForChild("Top")
+
+TopFrame:WaitForChild("Title").Text = "Anime Dice"
+TopFrame:WaitForChild("Subtitle").Text = "Autumn Event"
 
 -- // Configs
 local Config = {
@@ -47,7 +60,8 @@ function Helpers.GetCharacterParts()
 		return nil, nil
 	end
 
-	return character:FindFirstChildOfClass("Humanoid"), character:FindFirstChild("HumanoidRootPart")
+	return character:FindFirstChildOfClass("Humanoid"),
+		character:FindFirstChild("HumanoidRootPart")
 end
 
 function Helpers.GetPosition(object)
@@ -56,6 +70,8 @@ function Helpers.GetPosition(object)
 	elseif object:IsA("BasePart") then
 		return object.Position
 	end
+
+	return nil
 end
 
 function Helpers.GetDirection(origin, target)
@@ -69,7 +85,11 @@ function Helpers.IsInsideArea(position, area, margin)
 	local relative = area.CFrame:PointToObjectSpace(position)
 	local half = area.Size / 2
 
-	return math.abs(relative.X) <= half.X - margin and math.abs(relative.Z) <= half.Z - margin
+	local limitX = math.max(0, half.X - margin)
+	local limitZ = math.max(0, half.Z - margin)
+
+	return math.abs(relative.X) <= limitX
+		and math.abs(relative.Z) <= limitZ
 end
 
 function Helpers.CanMove(humanoid, root)
@@ -81,7 +101,6 @@ function Helpers.CanMove(humanoid, root)
 		and not humanoid.PlatformStand
 		and not humanoid.Sit
 end
-
 
 -- // Variables
 local Variables = {
@@ -103,15 +122,22 @@ local Functions = {
 	};
 }
 
--- // CollectApple
+-- // CollectApple References
 local AppleConfig = Config.AutumnEvent.CollectApple
 local AppleVariables = Variables.AutumnEvent.CollectApple
 local Apple = Functions.AutumnEvent.CollectApple
 
 -- // Initialization
 function Apple.Initialize()
-	AppleVariables.SafeArea = Helpers.GetPath(workspace, AppleConfig.Paths.SafeArea)
-	AppleVariables.ApplesFolder = Helpers.GetPath(workspace, AppleConfig.Paths.ApplesFolder)
+	AppleVariables.SafeArea = Helpers.GetPath(
+		workspace,
+		AppleConfig.Paths.SafeArea
+	)
+
+	AppleVariables.ApplesFolder = Helpers.GetPath(
+		workspace,
+		AppleConfig.Paths.ApplesFolder
+	)
 end
 
 -- // Apple Detection
@@ -136,24 +162,33 @@ function Apple.GetBestDirection(root)
 		end
 
 		local success, position = pcall(Helpers.GetPosition, object)
+
 		if not success or not position then
 			continue
 		end
 
-		if not Helpers.IsInsideArea(position, area, AppleConfig.EdgeMargin) then
+		if not Helpers.IsInsideArea(
+			position,
+			area,
+			AppleConfig.EdgeMargin
+		) then
 			continue
 		end
 
 		local offset = position - root.Position
 		local flat = Vector3.new(offset.X, 0, offset.Z)
 		local distance = flat.Magnitude
+
 		if distance <= 2 or distance > radius then
 			continue
 		end
 
 		local angle = math.atan2(flat.Z, flat.X)
 
-		local sector = math.floor(((angle + math.pi) / (2 * math.pi)) * directions) + 1
+		local sector = math.floor(
+			((angle + math.pi) / (2 * math.pi)) * directions
+		) + 1
+
 		sector = math.clamp(sector, 1, directions)
 
 		local weight = 1 / math.sqrt(distance)
@@ -178,7 +213,9 @@ function Apple.GetBestDirection(root)
 
 	local direction = sums[bestSector]
 
-	return direction.Magnitude > 0.01 and direction.Unitor or nil
+	return direction.Magnitude > 0.01
+		and direction.Unit
+		or nil
 end
 
 -- // Movement
@@ -190,13 +227,16 @@ function Apple.GetRandomDirection(root)
 		(math.random() - 0.5) * math.max(0, area.Size.X - margin * 2),
 		0,
 		(math.random() - 0.5) * math.max(0, area.Size.Z - margin * 2)
-		))
+	))
 
-	return Helpers.GetDirection(root.Position, target)or Vector3.new(1, 0, 0)
+	return Helpers.GetDirection(root.Position, target)
+		or Vector3.new(1, 0, 0)
 end
 
 function Apple.UpdateDirection(root)
-	AppleVariables.Direction = Apple.GetBestDirection(root) or Apple.GetRandomDirection(root)
+	AppleVariables.Direction =
+		Apple.GetBestDirection(root)
+		or Apple.GetRandomDirection(root)
 end
 
 function Apple.CorrectDirection(root)
@@ -211,12 +251,22 @@ function Apple.CorrectDirection(root)
 	local half = area.Size / 2
 
 	local target = area.CFrame:PointToWorldSpace(Vector3.new(
-		math.clamp(localPosition.X, -half.X + margin, half.X - margin),
+		math.clamp(
+			localPosition.X,
+			-math.max(0, half.X - margin),
+			math.max(0, half.X - margin)
+		),
 		0,
-		math.clamp(localPosition.Z, -half.Z + margin, half.Z - margin)
-		))
+		math.clamp(
+			localPosition.Z,
+			-math.max(0, half.Z - margin),
+			math.max(0, half.Z - margin)
+		)
+	))
 
-	AppleVariables.Direction = Helpers.GetDirection(root.Position, target) or AppleVariables.Direction
+	AppleVariables.Direction =
+		Helpers.GetDirection(root.Position, target)
+		or AppleVariables.Direction
 end
 
 function Apple.Update()
@@ -227,6 +277,7 @@ function Apple.Update()
 	end
 
 	local now = os.clock()
+
 	if now - AppleVariables.LastUpdate >= AppleConfig.UpdateInterval then
 		AppleVariables.LastUpdate = now
 		Apple.UpdateDirection(root)
@@ -258,7 +309,10 @@ function Apple.Start()
 	AppleConfig.Active = true
 	AppleVariables.LastUpdate = 0
 
-	RunService:BindToRenderStep(AppleConfig.BindName, Enum.RenderPriority.Input.Value + 1, function()
+	RunService:BindToRenderStep(
+		AppleConfig.BindName,
+		Enum.RenderPriority.Input.Value + 1,
+		function()
 			if AppleConfig.Active then
 				Apple.Update()
 			end
@@ -274,10 +328,19 @@ function Apple.Toggle()
 	end
 end
 
--- // UI
-local AutumnCategory = Library:CreateCategory("AutumnEvent", "Autumn Event")
+-- // Initialization
+Apple.Initialize()
 
-Library:CreateItem("AutumnEvent", "CollectApple", "Auto Collect Apple",
+-- // UI
+Library:CreateCategory(
+	"AutumnEvent",
+	"Autumn Event"
+)
+
+Library:CreateItem(
+	"AutumnEvent",
+	"CollectApple",
+	"Auto Collect Apple",
 	function(enabled)
 		if enabled then
 			Apple.Start()
@@ -285,11 +348,8 @@ Library:CreateItem("AutumnEvent", "CollectApple", "Auto Collect Apple",
 			Apple.Stop()
 		end
 	end,
-	false)
-
-
--- // Initialization
-Apple.Initialize()
+	false
+)
 
 -- // Connections
 Player.CharacterAdded:Connect(function()
