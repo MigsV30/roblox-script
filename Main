@@ -178,7 +178,7 @@ function Apple.GetBestDirection(root)
 
 	local direction = sums[bestSector]
 
-	return direction.Magnitude > 0.01 and direction.Unitor nil
+	return direction.Magnitude > 0.01 and direction.Unitor or nil
 end
 
 -- // Movement
