@@ -6,8 +6,15 @@ local Player = Players.LocalPlayer
 local UserId = Player.UserId
 local PlayerGui = Player:WaitForChild("PlayerGui")
 
+-- // Library Configuration (edit these defaults or use UI:Configure later)
+local GUI_CONFIG = {
+	Name = "HUB",
+	Title = "Blue Lock Farm — Script",
+	Subtitle = "GrindX HUB",
+}
+
 -- // Prevent Duplicates
-local ExistingUI = PlayerGui:FindFirstChild("HUB")
+local ExistingUI = PlayerGui:FindFirstChild(GUI_CONFIG.Name)
 if ExistingUI then
 	ExistingUI:Destroy()
 end
@@ -54,7 +61,7 @@ local colors = {
 
 -- // ScreenGui
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "HUB"
+ScreenGui.Name = GUI_CONFIG.Name
 ScreenGui.IgnoreGuiInset = true
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
@@ -159,7 +166,7 @@ Title.Position = UDim2.new(0.21, 0, 0.341, 0)
 Title.Size = UDim2.new(0.371, 0, 0.436, 0)
 Title.ZIndex = 2
 Title.Font = Enum.Font.BuilderSansBold
-Title.Text = "Blue Lock Farm — Script"
+Title.Text = GUI_CONFIG.Title
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextScaled = true
 Title.TextWrapped = true
@@ -176,7 +183,7 @@ Subtitle.Position = UDim2.new(0.21, 0, 0.699, 0)
 Subtitle.Size = UDim2.new(0.371, 0, 0.316, 0)
 Subtitle.ZIndex = 2
 Subtitle.Font = Enum.Font.BuilderSans
-Subtitle.Text = "GrindX HUB"
+Subtitle.Text = GUI_CONFIG.Subtitle
 Subtitle.TextColor3 = Color3.fromRGB(255, 255, 255)
 Subtitle.TextScaled = true
 Subtitle.TextTransparency = 0.3
@@ -523,6 +530,46 @@ function UI:CreateItem(CategoryName: string, Name: string, Text: string, Callbac
 	ItemData.Frame.Visible = SelectedCategory == CategoryData
 
 	return ItemData
+end
+
+-- // Public API: GUI Name / Title / Subtitle Configuration
+function UI:SetGuiName(Name: string)
+	assert(type(Name) == "string" and Name ~= "", "ScreenGui name must be a non-empty string")
+
+	local Existing = PlayerGui:FindFirstChild(Name)
+	assert(not Existing or Existing == ScreenGui, "A ScreenGui with this name already exists: " .. Name)
+
+	ScreenGui.Name = Name
+	GUI_CONFIG.Name = Name
+	return ScreenGui
+end
+
+function UI:SetTitle(Text: string)
+	assert(type(Text) == "string", "Title must be a string")
+	Title.Text = Text
+	GUI_CONFIG.Title = Text
+end
+
+function UI:SetSubtitle(Text: string)
+	assert(type(Text) == "string", "Subtitle must be a string")
+	Subtitle.Text = Text
+	GUI_CONFIG.Subtitle = Text
+end
+
+function UI:Configure(Options)
+	assert(type(Options) == "table", "Configure expects a table")
+
+	if Options.Name ~= nil then
+		self:SetGuiName(Options.Name)
+	end
+	if Options.Title ~= nil then
+		self:SetTitle(Options.Title)
+	end
+	if Options.Subtitle ~= nil then
+		self:SetSubtitle(Options.Subtitle)
+	end
+
+	return self
 end
 
 -- // Public API: Toggle / Visibility / Cleanup
