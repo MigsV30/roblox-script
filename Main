@@ -9,17 +9,47 @@ local PlayerGui = Player:WaitForChild("PlayerGui")
 -- // Library
 local LibraryURL = "https://raw.githubusercontent.com/MigsV30/roblox-script/refs/heads/AnimeDice/UI"
 
-local Success, Library = pcall(function()
+local function LoadLibrary()
     local Source = game:HttpGet(LibraryURL)
-    local LibraryFunction = loadstring(Source)
 
-    assert(LibraryFunction, "Failed to compile UI library")
+    assert(
+        type(Source) == "string" and #Source > 0,
+        "UI source is empty"
+    )
 
-    return LibraryFunction()
-end)
+    local Compiler = loadstring
 
-if not Success or not Library then
-    warn("[Anime Dice] Failed to load UI:", Library)
+    assert(
+        type(Compiler) == "function",
+        "loadstring is unavailable"
+    )
+
+    local Function, CompileError = Compiler(Source)
+
+    assert(
+        type(Function) == "function",
+        tostring(CompileError or "UI compilation failed")
+    )
+
+    local Success, Result = pcall(Function)
+
+    assert(
+        Success,
+        tostring(Result)
+    )
+
+    assert(
+        type(Result) == "table",
+        "UI library did not return a valid table"
+    )
+
+    return Result
+end
+
+local Success, Library = pcall(LoadLibrary)
+
+if not Success then
+    warn("[Anime Dice] UI Error:", Library)
     return
 end
 
@@ -27,15 +57,28 @@ end
 local ScreenGui = PlayerGui:WaitForChild("HUB", 10)
 
 if not ScreenGui then
-    warn("[Anime Dice] HUB ScreenGui was not created.")
+    warn("[Anime Dice] HUB was not created")
     return
 end
 
-local MainFrame = ScreenGui:WaitForChild("MainFrame")
-local TopFrame = MainFrame:WaitForChild("Top")
+local MainFrame = ScreenGui:WaitForChild("MainFrame", 5)
+local TopFrame = MainFrame and MainFrame:WaitForChild("Top", 5)
 
-TopFrame:WaitForChild("Title").Text = "Anime Dice"
-TopFrame:WaitForChild("Subtitle").Text = "Autumn Event"
+if not TopFrame then
+    warn("[Anime Dice] UI header was not found")
+    return
+end
+
+local Title = TopFrame:FindFirstChild("Title")
+local Subtitle = TopFrame:FindFirstChild("Subtitle")
+
+if Title then
+    Title.Text = "Anime Dice"
+end
+
+if Subtitle then
+    Subtitle.Text = "Autumn Event"
+end
 
 -- // Configs
 local Config = {
@@ -94,7 +137,9 @@ function Helpers.GetDirection(Origin, Target)
     local Offset = Target - Origin
     local Flat = Vector3.new(Offset.X, 0, Offset.Z)
 
-    return Flat.Magnitude > 0.01 and Flat.Unit or nil
+    return Flat.Magnitude > 0.01
+        and Flat.Unit
+        or nil
 end
 
 function Helpers.IsInsideArea(Position, Area, Margin)
@@ -278,18 +323,13 @@ function Apple.CorrectDirection(Root)
 
     local Half = Area.Size / 2
 
+    local LimitX = math.max(0, Half.X - Margin)
+    local LimitZ = math.max(0, Half.Z - Margin)
+
     local Target = Area.CFrame:PointToWorldSpace(Vector3.new(
-        math.clamp(
-            LocalPosition.X,
-            -math.max(0, Half.X - Margin),
-            math.max(0, Half.X - Margin)
-        ),
+        math.clamp(LocalPosition.X, -LimitX, LimitX),
         0,
-        math.clamp(
-            LocalPosition.Z,
-            -math.max(0, Half.Z - Margin),
-            math.max(0, Half.Z - Margin)
-        )
+        math.clamp(LocalPosition.Z, -LimitZ, LimitZ)
     ))
 
     AppleVariables.Direction =
@@ -366,27 +406,41 @@ function Apple.Toggle()
 end
 
 -- // Initialization
-Apple.Initialize()
+local InitSuccess, InitError = pcall(Apple.Initialize)
+
+if not InitSuccess then
+    warn("[Anime Dice] Initialization Error:", InitError)
+    Library:Destroy()
+    return
+end
 
 -- // UI
-Library:CreateCategory(
-    "AutumnEvent",
-    "Autumn Event"
-)
+local UISuccess, UIError = pcall(function()
+    Library:CreateCategory(
+        "AutumnEvent",
+        "Autumn Event"
+    )
 
-Library:CreateItem(
-    "AutumnEvent",
-    "CollectApple",
-    "Auto Collect Apple",
-    function(Enabled)
-        if Enabled then
-            Apple.Start()
-        else
-            Apple.Stop()
-        end
-    end,
-    false
-)
+    Library:CreateItem(
+        "AutumnEvent",
+        "CollectApple",
+        "Auto Collect Apple",
+        function(Enabled)
+            if Enabled then
+                Apple.Start()
+            else
+                Apple.Stop()
+            end
+        end,
+        false
+    )
+end)
+
+if not UISuccess then
+    warn("[Anime Dice] UI Creation Error:", UIError)
+    Library:Destroy()
+    return
+end
 
 -- // Connections
 Player.CharacterAdded:Connect(function()
